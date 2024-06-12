@@ -1,0 +1,19 @@
+dill==0.3.8
+h5py==3.11.0
+mpmath==1.3.0
+numpy==1.26.4
+pbr==6.0.0
+psutil==5.9.8
+pyscf==2.6.0
+python-dateutil==2.9.0.post0
+qiskit==1.1.0
+qiskit-algorithms==0.3.0
+qiskit-nature @ git+https://github.com/qiskit-community/qiskit-nature.git@3221b5c56cc25bd83f95b5c9932f801e79f249ee
+rustworkx==0.14.2
+scipy==1.13.1
+six==1.16.0
+stevedore==5.2.0
+symengine==0.11.0
+sympy==1.12.1
+tqdm==4.66.4
+typing_extensions==4.12.2

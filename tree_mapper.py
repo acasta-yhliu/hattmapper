@@ -1,5 +1,5 @@
 from qiskit.quantum_info import Pauli
-from qiskit_nature.second_q.operators import FermionicOp
+from qiskit_nature.second_q.operators import FermionicOp, MajoranaOp
 from qiskit_nature.second_q.mappers.fermionic_mapper import FermionicMapper
 
 from itertools import product, combinations
@@ -109,11 +109,11 @@ def compile_fermionic_op(
     nstrings = 2 * nqubits + 1
 
     # turn the Hamiltonian into Majorana form and ignore the coefficients
-    majorana_terms: set[tuple[int, ...]] = set()
+    majorana_terms: list[tuple[int, ...]] = []
     for terms, _ in fermionic_op.terms():
-        majorana_terms.update(
+        majorana_terms.extend(
             map(
-                lambda x: tuple(sorted(x)),
+                lambda x: x,
                 product(*((2 * i, 2 * i + 1) for _, i in terms)),
             )
         )
@@ -153,6 +153,9 @@ def compile_fermionic_op(
 
 
 if __name__ == "__main__":
+    from qiskit import QuantumCircuit, transpile
+    from qiskit.circuit.library import PauliEvolutionGate
+    from qiskit.synthesis import LieTrotter
     from qiskit.quantum_info import SparsePauliOp
     from qiskit_nature.units import DistanceUnit
     from qiskit_nature.second_q.drivers import PySCFDriver
@@ -185,12 +188,29 @@ if __name__ == "__main__":
         ("bravyi-kitaev", BravyiKitaevMapper()),
         ("jordan-wigner", JordanWignerMapper()),
     ]:
-        result = GroundStateEigensolver(mapper, NumPyMinimumEigensolver()).solve(
-            problem
-        )
-
         print("> Mapper =", name)
 
         qh = mapper.map(hamiltonian)
         print("     Pauli weight =", pauli_weight(qh))
+
+        result = GroundStateEigensolver(mapper, NumPyMinimumEigensolver()).solve(
+            problem
+        )
         print("     Groundstate energy =", result.groundenergy)
+
+        TIME = 1.0
+        TIME_STEPS = 1
+
+        pe = PauliEvolutionGate(qh, time=TIME, synthesis=LieTrotter(TIME_STEPS))
+        circ = QuantumCircuit(pe.num_qubits)
+        circ.append(pe, range(pe.num_qubits))
+
+        circuit = transpile(
+            circ, basis_gates=["ry", "rx", "cx", "rz"], optimization_level=3
+        )
+
+        print(
+            "     Circuit gates =",
+            ", ".join(f"{count} {insn}" for insn, count in circuit.count_ops().items()),
+        )
+        print("     Circuit depth =", circuit.depth())
