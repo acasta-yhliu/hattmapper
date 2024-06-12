@@ -13,7 +13,7 @@ from qiskit_nature.second_q.mappers.jordan_wigner_mapper import JordanWignerMapp
 from qiskit_algorithms import NumPyMinimumEigensolver
 from qiskit_nature.second_q.algorithms import GroundStateEigensolver
 
-from ternary_tree_mapper import HamiltonianTernaryTreeMapper
+from .ternary_tree_mapper import HamiltonianTernaryTreeMapper
 
 from argparse import ArgumentParser
 from dataclasses import dataclass
