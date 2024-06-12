@@ -1,10 +1,11 @@
 from qiskit.quantum_info import Pauli
 from qiskit_nature.second_q.operators import FermionicOp, MajoranaOp
 from qiskit_nature.second_q.mappers.fermionic_mapper import FermionicMapper
+from qiskit_nature.second_q.mappers.mode_based_mapper import ModeBasedMapper
 
-from itertools import product, combinations
+from itertools import combinations
 from functools import reduce
-from math import comb
+from math import comb, isclose
 from tqdm import tqdm
 
 
@@ -30,7 +31,9 @@ class PauliTable:
             ]
 
         return type(
-            f"PauliTableMapper", (FermionicMapper,), {"pauli_table": pauli_table}
+            f"PauliTableMapper",
+            (FermionicMapper, ModeBasedMapper),
+            {"pauli_table": pauli_table},
         )()
 
     def save(self, path: str):
@@ -109,17 +112,15 @@ def compile_fermionic_op(
     nstrings = 2 * nqubits + 1
 
     # turn the Hamiltonian into Majorana form and ignore the coefficients
-    majorana_terms: list[tuple[int, ...]] = []
-    for terms, _ in fermionic_op.terms():
-        majorana_terms.extend(
-            map(
-                lambda x: x,
-                product(*((2 * i, 2 * i + 1) for _, i in terms)),
-            )
-        )
+    terms = [
+        tuple(ms[1] for ms in term[0])
+        for term in MajoranaOp.from_fermionic_op(fermionic_op).terms()
+        if not isclose(abs(term[1]), 0)
+    ]
+
+    print(len(terms))
 
     # generate all terms, all initial nodes (strings)
-    terms = list(majorana_terms)
     nodes = set(range(nstrings))
 
     # mapping, node -> branch, parent
