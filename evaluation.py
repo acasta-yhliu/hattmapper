@@ -1,5 +1,5 @@
 from sys import stdout
-from typing import Literal, cast
+from typing import Callable, Literal, cast
 from qiskit import QuantumCircuit, transpile
 from qiskit.circuit.library import PauliEvolutionGate
 from qiskit.synthesis import LieTrotter
@@ -92,11 +92,25 @@ parser.add_argument(
 )
 
 
+def _qiskit_lie_trotter(
+    hamiltonian: SparsePauliOp, time: float, time_steps: int, basis_gates: list[str]
+) -> QuantumCircuit:
+    pe = PauliEvolutionGate(hamiltonian, time=time, synthesis=LieTrotter(time_steps))
+    circ = QuantumCircuit(pe.num_qubits)
+    circ.append(pe, range(pe.num_qubits))
+
+    circuit = transpile(circ, basis_gates=basis_gates, optimization_level=3)
+    return circuit
+
+
 def evaluate(
     name: str,
     problem: BaseProblem | FermionicOp,
     *,
     basis_gates: list[str] = ["cx", "rx", "ry", "rz"],
+    compile: Callable[
+        [SparsePauliOp, float, int, list[str]], QuantumCircuit
+    ] = _qiskit_lie_trotter,
 ):
     def pauli_weight(op: SparsePauliOp):
         weight = 0
@@ -131,11 +145,7 @@ def evaluate(
         TIME = 1.0
         TIME_STEPS = 1
 
-        pe = PauliEvolutionGate(qh, time=TIME, synthesis=LieTrotter(TIME_STEPS))
-        circ = QuantumCircuit(pe.num_qubits)
-        circ.append(pe, range(pe.num_qubits))
-
-        circuit = transpile(circ, basis_gates=basis_gates, optimization_level=3)
+        circuit = compile(qh, TIME, TIME_STEPS, basis_gates)
         ops = {str(k): v for k, v in circuit.count_ops().items()}
 
         records.append(
