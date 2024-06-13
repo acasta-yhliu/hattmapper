@@ -27,9 +27,9 @@ def _select_nodes(
     minimum_pauli_weight = float("inf")
     selection: tuple[int, int, int] | None = None
 
-    for xx, yy in tqdm(
-        combinations(nodes, 2),
-        total=math.comb(len(nodes), 2),
+    for xx, yy, zz in tqdm(
+        combinations(nodes, 3),
+        total=math.comb(len(nodes), 3),
         leave=False,
         desc=f"Qubit {round + 1}/{nqubits}",
         colour="#03925e",
@@ -47,7 +47,11 @@ def _select_nodes(
                         else (
                             (True, True)
                             if i == yy
-                            else (False, False)
+                            else(
+                                (False, True)
+                                if i == zz
+                                else (False, False)
+                            )
                         )
                     ),
                     term,
@@ -60,7 +64,7 @@ def _select_nodes(
         # is the selection better ?
         if pauli_weight < minimum_pauli_weight:
             minimum_pauli_weight = pauli_weight
-            selection = xx, yy
+            selection = xx, yy, zz
 
     assert selection is not None
     return selection

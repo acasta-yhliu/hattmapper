@@ -47,7 +47,8 @@ class EvaluationResult:
             return self._format_csv()
 
     def _format_default(self):
-        raise NotImplementedError()
+        for i in range(len(self.method)):
+            print(self.method[i] + " Pauli Weight: " + str(self.pauli_weight[i]))
 
     def _format_csv(self):
         print("warning: when reporting to csv, evaluation name is ignored")
