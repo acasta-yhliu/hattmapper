@@ -1,4 +1,4 @@
-from qiskit.quantum_info import Pauli
+from qiskit.quantum_info import Pauli, SparsePauliOp
 from qiskit_nature.second_q.operators import FermionicOp, MajoranaOp
 from qiskit_nature.second_q.mappers.fermionic_mapper import FermionicMapper
 from qiskit_nature.second_q.mappers.mode_based_mapper import ModeBasedMapper
@@ -69,6 +69,7 @@ def _select_nodes(
 def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None):
     if nqubits is None:
         nqubits = fermionic_op.register_length
+
     nstrings = 2 * nqubits + 1
 
     # turn the Hamiltonian into Majorana form and ignore the coefficients
@@ -119,6 +120,11 @@ class HamiltonianTernaryTreeMapper(ModeBasedMapper, FermionicMapper):
             raw_pauli_table = loader
 
         self.raw_pauli_table = raw_pauli_table
+
+        self.nqubits = nqubits if nqubits is not None else len(raw_pauli_table[0])
+
+    def map(self, second_q_ops: FermionicOp, *, _: int | None = None) -> SparsePauliOp:  # type: ignore
+        return super().map(second_q_ops, register_length=self.nqubits)  # type: ignore
 
     def pauli_table(self, register_length: int):
         table = []

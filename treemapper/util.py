@@ -64,9 +64,6 @@ class EvaluationResult:
         return "\n".join(lines)
 
 
-
-
-
 def _qiskit_lie_trotter(
     hamiltonian: SparsePauliOp, time: float, time_steps: int, basis_gates: list[str]
 ) -> QuantumCircuit:
@@ -82,6 +79,7 @@ def evaluate(
     name: str,
     problem: BaseProblem | FermionicOp,
     *,
+    extra_qubits: int = 0,
     basis_gates: list[str] = ["cx", "rx", "ry", "rz"],
     compile: Callable[
         [SparsePauliOp, float, int, list[str]], QuantumCircuit
@@ -102,7 +100,13 @@ def evaluate(
         hamiltonian = problem
 
     for mapper_name, mapper in [
-        ("Our Method", HamiltonianTernaryTreeMapper(cast(FermionicOp, hamiltonian))),
+        (
+            "Our Method",
+            HamiltonianTernaryTreeMapper(
+                cast(FermionicOp, hamiltonian),
+                nqubits=extra_qubits + hamiltonian.register_length,
+            ),
+        ),
         ("Bravyi-Kitaev", BravyiKitaevMapper()),
         ("Jordan-Wigner", JordanWignerMapper()),
     ]:
@@ -137,6 +141,3 @@ def evaluate(
         return tuple([x[i] for x in l] for i in range(n))
 
     return EvaluationResult(name, basis_gates, *split_n(records, 5))
-
-
-
