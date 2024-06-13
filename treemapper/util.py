@@ -12,8 +12,10 @@ from qiskit_algorithms import NumPyMinimumEigensolver
 from qiskit_nature.second_q.algorithms import GroundStateEigensolver
 
 from .ternary_tree_mapper import HamiltonianTernaryTreeMapper
+from .extra_modes_tree_mapper import HamiltonianTernaryTreeExtraMapper
 
 from dataclasses import dataclass
+import math
 
 
 @dataclass
@@ -107,18 +109,23 @@ def evaluate(
                 nqubits=extra_qubits + hamiltonian.register_length,
             ),
         ),
+        ("Method 2:", 
+            HamiltonianTernaryTreeExtraMapper(
+            cast(FermionicOp, hamiltonian), 
+            nqubits=extra_qubits + math.ceil(hamiltonian.register_length * 1.5),)),
         ("Bravyi-Kitaev", BravyiKitaevMapper()),
         ("Jordan-Wigner", JordanWignerMapper()),
     ]:
         if isinstance(problem, BaseProblem):
-            ground_energy = (
+            '''ground_energy = (
                 GroundStateEigensolver(mapper, NumPyMinimumEigensolver())
                 .solve(problem)
                 .groundenergy
-            )
+            )'''
+            ground_energy = 0
         else:
             ground_energy = 0
-
+            
         qh = mapper.map(hamiltonian)
 
         TIME = 1.0
