@@ -4,6 +4,7 @@ from qiskit_nature.second_q.mappers.fermionic_mapper import FermionicMapper
 from qiskit_nature.second_q.mappers.mode_based_mapper import ModeBasedMapper
 
 from itertools import combinations
+from itertools import permutations
 from functools import reduce
 import math
 from tqdm import tqdm
@@ -25,18 +26,18 @@ def _select_nodes(
     terms: list[tuple[int, ...]], nodes: set[int], round: int, nqubits: int
 ):
     minimum_pauli_weight = float("inf")
-    selection: tuple[int, int] | None = None
+    selection: tuple[int, int, int] | None = None
 
-    for xx, yy in tqdm(
-        combinations(nodes, 2),
-        total=math.comb(len(nodes), 2),
+    for xx, yy, zz in tqdm(
+        permutations(nodes, 3),
+        total=math.perm(len(nodes), 3),
         leave=False,
         desc=f"Qubit {round + 1}/{nqubits}",
         colour="#03925e",
         ascii="░▒█",
     ):
         # calculate Pauli weight of each selection
-        if xx > 2 *(math.floor(nqubits / 1.5)) + 1 or yy > 2 *(math.floor(nqubits / 1.5)) + 1:
+        if (xx >= 2 *(math.floor(nqubits / 1.5)) and xx <= 2 * nqubits) or (yy >= 2 *(math.floor(nqubits / 1.5)) and yy <= 2 * nqubits) or (zz < 2 * math.floor(nqubits / 1.5)):
             continue
         pauli_weight = 0
         for term in terms:
@@ -50,6 +51,9 @@ def _select_nodes(
                             (True, True)
                             if i == yy
                             else(
+                                (False, True)
+                                if i == zz
+                                else
                                 (False, False)
                             )
                         )
@@ -64,8 +68,12 @@ def _select_nodes(
         # is the selection better ?
         if pauli_weight < minimum_pauli_weight:
             minimum_pauli_weight = pauli_weight
-            selection = xx, yy
+            selection = xx, yy, zz
 
+    if selection is None:
+        print(round)
+        print(nodes)
+    print(selection)
     assert selection is not None
     return selection
 
