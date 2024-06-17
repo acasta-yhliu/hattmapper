@@ -31,7 +31,7 @@ def _select_nodes(
     (yy, py) = queue.popitem()
     (zz, pz) = queue.popitem()
     selection = xx, yy, zz
-    queue[qubit_id] = px + py + pz
+    queue[qubit_id] = min(px,py,pz)
     assert selection is not None
     return selection
 
@@ -55,6 +55,8 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
     
     for i in range(nstrings):
         queue[i] = frequencies[i]
+        
+    queue[nstrings - 1] = float("inf")
 
     # generate all terms, all initial nodes (strings)
     nodes = set(range(nstrings))

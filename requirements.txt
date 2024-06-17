@@ -17,3 +17,4 @@ symengine==0.11.0
 sympy==1.12.1
 tqdm==4.66.4
 typing_extensions==4.12.2
+heapdict
