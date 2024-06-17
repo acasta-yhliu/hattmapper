@@ -17,7 +17,7 @@ from .huffmanesque_mapper import HamiltonianTernaryTreeHuffmanMapper
 
 from dataclasses import dataclass
 import math
-
+import time
 
 @dataclass
 class EvaluationResult:
@@ -29,6 +29,8 @@ class EvaluationResult:
     gate_counts: list[list[int]]
     depth: list[int]
     energy: list[float]
+    
+    times: list[time.time]
 
     def report(self, format: Literal["default", "csv"], output: str | None):
         if output is None:
@@ -50,6 +52,7 @@ class EvaluationResult:
     def _format_default(self):
         for i in range(len(self.method)):
             print(self.method[i] + " Pauli Weight: " + str(self.pauli_weight[i]))
+            print("Time taken:" + str(self.times[i]))
 
     def _format_csv(self):
         print("warning: when reporting to csv, evaluation name is ignored")
@@ -123,24 +126,28 @@ def evaluate(
         ("Bravyi-Kitaev", BravyiKitaevMapper()),
         ("Jordan-Wigner", JordanWignerMapper()),
     ]:
+        start = time.time()
         if isinstance(problem, BaseProblem):
             ground_energy = (
                 GroundStateEigensolver(mapper, NumPyMinimumEigensolver())
                 .solve(problem)
                 .groundenergy
             )
-            ground_energy = 0
         else:
             ground_energy = 0
             
+        
         qh = mapper.map(hamiltonian)
+        
+        
 
         TIME = 1.0
         TIME_STEPS = 1
 
         circuit = compile(qh, TIME, TIME_STEPS, basis_gates)
         ops = {str(k): v for k, v in circuit.count_ops().items()}
-
+        end = time.time()
+        elapsed  = end - start
         records.append(
             (
                 mapper_name,
@@ -148,10 +155,11 @@ def evaluate(
                 [ops[gate] for gate in basis_gates],
                 circuit.depth(),
                 ground_energy,
+                elapsed,
             )
         )
 
     def split_n(l, n):
         return tuple([x[i] for x in l] for i in range(n))
 
-    return EvaluationResult(name, basis_gates, *split_n(records, 5))
+    return EvaluationResult(name, basis_gates, *split_n(records, 6))

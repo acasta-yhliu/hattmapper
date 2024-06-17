@@ -42,3 +42,15 @@ if __name__ == "__main__":
         ).run(),
         basis_gates=args.basis_gates.split(","),
     ).report(args.format, output=args.output)
+    
+    evaluate(
+        "LiH",
+        PySCFDriver(
+            atom='O 0.0 0.0 0.0; H 0.757 0.586 0.0; H -0.757 0.586 0.0',
+            basis="sto3g",
+            charge=0,
+            spin=0,
+            unit=DistanceUnit.ANGSTROM,
+        ).run(),
+        basis_gates=args.basis_gates.split(","),
+    ).report(args.format, output=args.output)
