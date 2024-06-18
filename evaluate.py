@@ -44,9 +44,28 @@ if __name__ == "__main__":
     ).report(args.format, output=args.output)
     
     evaluate(
-        "LiH",
+        "H2O",
         PySCFDriver(
-            atom='O 0.0 0.0 0.0; H 0.757 0.586 0.0; H -0.757 0.586 0.0',
+            atom='\
+            O 0.0 0.0 0.0; \
+            H 0.757 0.586 0.0; \
+            H -0.757 0.586 0.0\
+            ',
+            basis="sto3g",
+            charge=0,
+            spin=0,
+            unit=DistanceUnit.ANGSTROM,
+        ).run(),
+        basis_gates=args.basis_gates.split(","),
+    ).report(args.format, output=args.output)
+    
+    evaluate(
+        "O2",
+        PySCFDriver(
+            atom='\
+            O 0.616 0.0 0.0; \
+            O -0.616 0.0 0.0\
+            ',
             basis="sto3g",
             charge=0,
             spin=0,

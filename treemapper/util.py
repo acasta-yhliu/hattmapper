@@ -50,6 +50,7 @@ class EvaluationResult:
             return self._format_csv()
 
     def _format_default(self):
+        print(self.name + "Test:")
         for i in range(len(self.method)):
             print(self.method[i] + " Pauli Weight: " + str(self.pauli_weight[i]))
             print("Time taken:" + str(self.times[i]))
@@ -114,15 +115,17 @@ def evaluate(
                 nqubits=hamiltonian.register_length,
             ),
         ),
-        #('Method 2:', 
+        #(
+        #    'Method 2:', 
         #    HamiltonianTernaryTreeExtraMapper(
         #    cast(FermionicOp, hamiltonian), 
-        #    nqubits=extra_qubits + math.ceil(hamiltonian.register_length * 1.5),)),
-        #
-        ("Huffman:", 
-            HamiltonianTernaryTreeHuffmanMapper(
-            cast(FermionicOp, hamiltonian), 
-            nqubits=hamiltonian.register_length,)),
+        #    nqubits=extra_qubits + math.ceil(hamiltonian.register_length * 1.5),
+        #    ),
+        #),
+        # ("Huffman:", 
+        #     HamiltonianTernaryTreeHuffmanMapper(
+        #     cast(FermionicOp, hamiltonian), 
+        #     nqubits=hamiltonian.register_length,)),
         ("Bravyi-Kitaev", BravyiKitaevMapper()),
         ("Jordan-Wigner", JordanWignerMapper()),
     ]:

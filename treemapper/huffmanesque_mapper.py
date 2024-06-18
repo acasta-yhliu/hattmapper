@@ -64,7 +64,14 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
     # mapping, node -> branch, parent
     mapping: dict[int, tuple[str, int]] = {}
 
-    for round in range(nqubits):
+    for round in tqdm(
+        range(nqubits),
+        total=nqubits,
+        leave=False,
+        desc=f"Constructing node",
+        colour="#03925e",
+        ascii="░▒█",
+    ):
         # the qubit that will become the new parent
         qubit_id = nstrings + round
 
