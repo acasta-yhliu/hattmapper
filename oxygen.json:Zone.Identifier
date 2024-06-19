@@ -1,4 +1,0 @@
-[ZoneTransfer]
-ZoneId=3
-ReferrerUrl=https://pubchem.ncbi.nlm.nih.gov/compound/Oxygen
-HostUrl=https://pubchem.ncbi.nlm.nih.gov/rest/pug/conformers/000003D100000001/JSON?response_type=save&response_basename=Conformer3D_COMPOUND_CID_977
