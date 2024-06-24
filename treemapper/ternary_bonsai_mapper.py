@@ -3,9 +3,9 @@ from qiskit_nature.second_q.operators import FermionicOp, MajoranaOp
 from qiskit_nature.second_q.mappers.fermionic_mapper import FermionicMapper
 from qiskit_nature.second_q.mappers.mode_based_mapper import ModeBasedMapper
 
-from itertools import combinations
+from itertools import combinations, permutations
 from functools import reduce
-from math import comb, isclose
+import math
 from tqdm import tqdm
 
 
@@ -28,8 +28,8 @@ def _select_nodes(
     selection: tuple[int, int, int] | None = None
 
     for xx, zz in tqdm(
-        combinations(nodes, 2),
-        total=comb(len(nodes), 2),
+        permutations(nodes, 2),
+        total=math.perm(len(nodes), 2),
         leave=False,
         desc=f"Qubit {round + 1}/{nqubits}",
         colour="#03925e",
@@ -39,7 +39,9 @@ def _select_nodes(
         if zz == nqubits * 2:
             if len(nodes) != 3:
                 continue
-        if xx + 1 == nqubits * 2:
+        if len(nodes) == 3:
+            zz == nqubits * 2
+        if xx == nqubits * 2 or xx + 1 == nqubits * 2:
             continue
         pauli_weight = 0
         i = xx
@@ -78,10 +80,10 @@ def _select_nodes(
         if pauli_weight <= minimum_pauli_weight:
             minimum_pauli_weight = pauli_weight
             selection = xx, yy, zz
-    print(nqubits * 2 + 1 + round)
-    print(nodes)
+    #print(nqubits * 2 + 1 + round)
+    #print(nodes)
     assert selection is not None
-    print(selection)
+    #print(selection)
     return selection
 
 
@@ -94,7 +96,7 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
     terms = [
         tuple(ms[1] for ms in term[0])
         for term in MajoranaOp.from_fermionic_op(fermionic_op).terms()
-        if not isclose(abs(term[1]), 0)
+        if not math.isclose(abs(term[1]), 0)
     ]
     # generate all terms, all initial nodes (strings)
     nodes = set(range(nstrings))

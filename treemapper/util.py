@@ -149,7 +149,7 @@ def evaluate(
             ground_energy = 0
         
         qh = mapper.map(hamiltonian)
-        
+        print("Eigensolver time = " + str(time.time() - start))
         TIME = 1.0
         TIME_STEPS = 1
 
