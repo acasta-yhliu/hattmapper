@@ -14,6 +14,7 @@ from qiskit_nature.second_q.algorithms import GroundStateEigensolver
 from .ternary_tree_mapper import HamiltonianTernaryTreeMapper
 from .extra_modes_tree_mapper import HamiltonianTernaryTreeExtraMapper
 from .huffmanesque_mapper import HamiltonianTernaryTreeHuffmanMapper
+from .ternary_bonsai_mapper import HamiltonianTernaryBonsaiMapper
 
 from dataclasses import dataclass
 import math
@@ -106,7 +107,7 @@ def evaluate(
         hamiltonian = problem.hamiltonian.second_q_op()
     else:
         hamiltonian = problem
-
+    
     for mapper_name, mapper in [
         (
             "Our Method",
@@ -115,7 +116,7 @@ def evaluate(
                 nqubits=hamiltonian.register_length,
             ),
         ),
-        #(
+        # (
         #    'Method 2:', 
         #    HamiltonianTernaryTreeExtraMapper(
         #    cast(FermionicOp, hamiltonian), 
@@ -126,10 +127,18 @@ def evaluate(
         #     HamiltonianTernaryTreeHuffmanMapper(
         #     cast(FermionicOp, hamiltonian), 
         #     nqubits=hamiltonian.register_length,)),
+        (
+            "Bonsai esque",
+            HamiltonianTernaryBonsaiMapper(
+                cast(FermionicOp, hamiltonian),
+                nqubits=hamiltonian.register_length,
+            ),
+        ),
         ("Bravyi-Kitaev", BravyiKitaevMapper()),
         ("Jordan-Wigner", JordanWignerMapper()),
     ]:
         start = time.time()
+        print("Got here")
         if isinstance(problem, BaseProblem):
             ground_energy = (
                 GroundStateEigensolver(mapper, NumPyMinimumEigensolver())
@@ -138,12 +147,9 @@ def evaluate(
             )
         else:
             ground_energy = 0
-            
         
         qh = mapper.map(hamiltonian)
         
-        
-
         TIME = 1.0
         TIME_STEPS = 1
 

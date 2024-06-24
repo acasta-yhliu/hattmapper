@@ -3,6 +3,7 @@ from qiskit_nature.second_q.drivers import PySCFDriver
 
 from argparse import ArgumentParser
 from treemapper import evaluate
+from moleculeFromJson import loadMolecule
 
 parser = ArgumentParser()
 parser.add_argument(

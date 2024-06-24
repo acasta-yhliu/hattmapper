@@ -22,21 +22,38 @@ def _walk_string(
 
 
 def _select_nodes(
-    terms: list[tuple[int, ...]], nodes: set[int], round: int, nqubits: int
+    terms: list[tuple[int, ...]], nodes: set[int], round: int, nqubits: int, tree: dict[int, tuple[int, int, int]], mapping: dict[int, tuple[str, int]]
 ):
     minimum_pauli_weight = float("inf")
     selection: tuple[int, int, int] | None = None
 
-    for xx, yy, zz in tqdm(
-        combinations(nodes, 3),
-        total=comb(len(nodes), 3),
+    for xx, zz in tqdm(
+        combinations(nodes, 2),
+        total=comb(len(nodes), 2),
         leave=False,
         desc=f"Qubit {round + 1}/{nqubits}",
         colour="#03925e",
         ascii="░▒█",
     ):
         # calculate Pauli weight of each selection
+        if zz == nqubits * 2:
+            if len(nodes) != 3:
+                continue
+        if xx + 1 == nqubits * 2:
+            continue
         pauli_weight = 0
+        i = xx
+        while i in tree:            #find the Z child of the X branch, like the bonsai alg
+            i = tree[i][2]
+        if i % 2 == 0:              #now the Y branch will the be corresponding other majorana operator
+            yy = i + 1
+        else:
+            yy = i - 1
+        if yy not in nodes:         #find the subtree the Y child should be in 
+            while yy in mapping:
+                op, yy = mapping[yy]
+        if zz == yy or xx == yy:                #shouldn't be the same
+            continue
         for term in terms:
             term = reduce(
                 lambda x, y: (x[0] ^ y[0], x[1] ^ y[1]),
@@ -58,11 +75,13 @@ def _select_nodes(
                 pauli_weight += 1
 
         # is the selection better ?
-        if pauli_weight < minimum_pauli_weight:
+        if pauli_weight <= minimum_pauli_weight:
             minimum_pauli_weight = pauli_weight
             selection = xx, yy, zz
-
+    print(nqubits * 2 + 1 + round)
+    print(nodes)
     assert selection is not None
+    print(selection)
     return selection
 
 
@@ -82,18 +101,21 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
 
     # mapping, node -> branch, parent
     mapping: dict[int, tuple[str, int]] = {}
+    #mapping for parent -> (x,y,z)
+    tree: dict[int, tuple[int, int, int]] = {}
     
     for round in range(nqubits):
         # the qubit that will become the new parent
         qubit_id = nstrings + round
 
         # select the node with lowest Pauli weight
-        selection = _select_nodes(terms, nodes, round, nqubits)
+        selection = _select_nodes(terms, nodes, round, nqubits, tree, mapping)
 
         # update nodes and terms, record solution
         for node, op in zip(selection, "XYZ"):
             nodes.remove(node)
             mapping[node] = (op, qubit_id)
+            tree[qubit_id] = selection
         nodes.add(qubit_id)
 
         # reduce the Hamiltonian
@@ -108,7 +130,7 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
     return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
 
 
-class HamiltonianTernaryTreeMapper(ModeBasedMapper, FermionicMapper):
+class HamiltonianTernaryBonsaiMapper(ModeBasedMapper, FermionicMapper):
     def __init__(
         self, loader: FermionicOp | list[str], nqubits: int | None = None
     ) -> None:
@@ -142,4 +164,4 @@ class HamiltonianTernaryTreeMapper(ModeBasedMapper, FermionicMapper):
     def load(path: str):
         with open(path, "r") as pauli_table_file:
             lines = list(map(str.strip, pauli_table_file.readlines()))
-            return HamiltonianTernaryTreeMapper(lines)
+            return HamiltonianTernaryBonsaiMapper(lines)
