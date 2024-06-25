@@ -36,11 +36,12 @@ def _select_nodes(
         ascii="░▒█",
     ):
         # calculate Pauli weight of each selection
-        if zz == nqubits * 2:
-            if len(nodes) != 3:
-                continue
-        if len(nodes) == 3:
-            zz == nqubits * 2
+        vac = nqubits * 2
+        while vac in mapping:
+            _, vac = mapping[vac]
+        if xx == vac:
+            continue
+        
         if xx == nqubits * 2 or xx + 1 == nqubits * 2:
             continue
         pauli_weight = 0
@@ -51,9 +52,8 @@ def _select_nodes(
             yy = i + 1
         else:
             yy = i - 1
-        if yy not in nodes:         #find the subtree the Y child should be in 
-            while yy in mapping:
-                op, yy = mapping[yy]
+        while yy in mapping:
+            _, yy = mapping[yy]
         if zz == yy or xx == yy:                #shouldn't be the same
             continue
         for term in terms:
