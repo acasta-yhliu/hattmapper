@@ -39,12 +39,9 @@ def _select_nodes(
         vac = nqubits * 2
         while vac in mapping:
             _, vac = mapping[vac]
-        if xx == vac:
+        if xx == vac:       
             continue
         
-        if xx == nqubits * 2 or xx + 1 == nqubits * 2:
-            continue
-        pauli_weight = 0
         i = xx
         while i in tree:            #find the Z child of the X branch, like the bonsai alg
             i = tree[i][2]
@@ -54,8 +51,10 @@ def _select_nodes(
             yy = i - 1
         while yy in mapping:
             _, yy = mapping[yy]
-        if zz == yy or xx == yy:                #shouldn't be the same
+        if zz == yy:                #shouldn't be the same
             continue
+            
+        pauli_weight = 0
         for term in terms:
             term = reduce(
                 lambda x, y: (x[0] ^ y[0], x[1] ^ y[1]),
