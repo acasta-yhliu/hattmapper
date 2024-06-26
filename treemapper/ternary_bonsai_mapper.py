@@ -21,6 +21,23 @@ def _walk_string(
     return "".join(string)
 
 
+def print_tree(i: int, tree: dict[int, tuple[int, int, int]], nstrings: int, string: str):
+    if i in tree:
+        string[i - nstrings] = "X"
+        print_tree(tree[i][0], tree, nstrings, string)
+        string[i - nstrings] = "Y"
+        print_tree(tree[i][1], tree, nstrings, string)
+        string[i - nstrings] = "Z"
+        print_tree(tree[i][2], tree, nstrings, string)    
+        string[i - nstrings] = "I"
+    else:
+        for j in range(len(string)):
+            if string[j] == "I":
+                string[j] = " "
+        print(f"{str(i) : <3}" + " " + "".join(string))
+    
+    
+
 def _select_nodes(
     terms: list[tuple[int, ...]], nodes: set[int], round: int, nqubits: int, tree: dict[int, tuple[int, int, int]], mapping: dict[int, tuple[str, int]]
 ):
@@ -79,10 +96,7 @@ def _select_nodes(
         if pauli_weight <= minimum_pauli_weight:
             minimum_pauli_weight = pauli_weight
             selection = xx, yy, zz
-    #print(nqubits * 2 + 1 + round)
-    #print(nodes)
     assert selection is not None
-    #print(selection)
     return selection
 
 
@@ -128,6 +142,7 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
         terms = list(filter(lambda x: len(x) != 0, terms))
 
     # generate solution
+    print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
     return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
 
 

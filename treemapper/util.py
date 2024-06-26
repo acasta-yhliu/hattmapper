@@ -138,18 +138,17 @@ def evaluate(
         ("Jordan-Wigner", JordanWignerMapper()),
     ]:
         start = time.time()
-        print("Got here")
-        if isinstance(problem, BaseProblem):
-            ground_energy = (
-                GroundStateEigensolver(mapper, NumPyMinimumEigensolver())
-                .solve(problem)
-                .groundenergy
-            )
-        else:
-            ground_energy = 0
+        # if isinstance(problem, BaseProblem):
+        #     ground_energy = (
+        #         GroundStateEigensolver(mapper, NumPyMinimumEigensolver())
+        #         .solve(problem)
+        #         .groundenergy
+        #     )
+        # else:
+        #     ground_energy = 0
+        ground_energy = 0
         
         qh = mapper.map(hamiltonian)
-        print("Eigensolver time = " + str(time.time() - start))
         TIME = 1.0
         TIME_STEPS = 1
 
