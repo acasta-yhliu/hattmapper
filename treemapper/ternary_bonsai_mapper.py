@@ -142,7 +142,7 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
         terms = list(filter(lambda x: len(x) != 0, terms))
 
     # generate solution
-    print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
+    # print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
     return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
 
 

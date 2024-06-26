@@ -116,17 +116,10 @@ def evaluate(
                 nqubits=hamiltonian.register_length,
             ),
         ),
-        # (
-        #    'Method 2:', 
-        #    HamiltonianTernaryTreeExtraMapper(
-        #    cast(FermionicOp, hamiltonian), 
-        #    nqubits=extra_qubits + math.ceil(hamiltonian.register_length * 1.5),
-        #    ),
-        #),
-        # ("Huffman:", 
-        #     HamiltonianTernaryTreeHuffmanMapper(
-        #     cast(FermionicOp, hamiltonian), 
-        #     nqubits=hamiltonian.register_length,)),
+        ("Huffman:", 
+            HamiltonianTernaryTreeHuffmanMapper(
+            cast(FermionicOp, hamiltonian), 
+            nqubits=hamiltonian.register_length,)),
         (
             "Bonsai esque",
             HamiltonianTernaryBonsaiMapper(
