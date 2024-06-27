@@ -116,10 +116,11 @@ def evaluate(
                 nqubits=hamiltonian.register_length,
             ),
         ),
-        ("Huffman:", 
-            HamiltonianTernaryTreeHuffmanMapper(
-            cast(FermionicOp, hamiltonian), 
-            nqubits=hamiltonian.register_length,)),
+        # ("Huffman:", 
+        #     HamiltonianTernaryTreeHuffmanMapper(
+        #     cast(FermionicOp, hamiltonian), 
+        #     nqubits=hamiltonian.register_length,)
+        # ),
         (
             "Bonsai esque",
             HamiltonianTernaryBonsaiMapper(
@@ -132,6 +133,7 @@ def evaluate(
     ]:
         start = time.time()
         #this runs too slow, might need to delete
+        # 
         # if isinstance(problem, BaseProblem):
         #     ground_energy = (
         #         GroundStateEigensolver(mapper, NumPyMinimumEigensolver())
