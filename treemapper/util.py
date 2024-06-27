@@ -131,6 +131,7 @@ def evaluate(
         ("Jordan-Wigner", JordanWignerMapper()),
     ]:
         start = time.time()
+        #this runs too slow, might need to delete
         # if isinstance(problem, BaseProblem):
         #     ground_energy = (
         #         GroundStateEigensolver(mapper, NumPyMinimumEigensolver())

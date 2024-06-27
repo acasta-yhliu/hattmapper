@@ -63,7 +63,19 @@ if __name__ == "__main__":
     evaluate(
         "Methane",
         PySCFDriver(
-            atom=loadMolecule("methane.json"),
+            atom=loadMolecule("tests/methane.json"),
+            basis="sto3g",
+            charge=0,
+            spin=0,
+            unit=DistanceUnit.ANGSTROM,
+        ).run(),
+        basis_gates=args.basis_gates.split(","),
+    ).report(args.format, output=args.output)
+    
+    evaluate(
+        "N2",
+        PySCFDriver(
+            atom=loadMolecule('tests/n2.json'),
             basis="sto3g",
             charge=0,
             spin=0,

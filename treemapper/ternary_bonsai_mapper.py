@@ -14,7 +14,7 @@ def _walk_string(
 ):
     string = ["I" for _ in range(nqubits)]
 
-    while i in mapping:
+    while i in mapping:             #move up the tree until we get to the root (the root has no parent and is not in mapping)
         op, i = mapping[i]
         string[i - nstrings] = op
 
@@ -22,7 +22,7 @@ def _walk_string(
 
 
 def print_tree(i: int, tree: dict[int, tuple[int, int, int]], nstrings: int, string: str):
-    if i in tree:
+    if i in tree:       #print recursively. This helps retain some structure that we can observe.
         string[i - nstrings] = "X"
         print_tree(tree[i][0], tree, nstrings, string)
         string[i - nstrings] = "Y"
@@ -34,6 +34,7 @@ def print_tree(i: int, tree: dict[int, tuple[int, int, int]], nstrings: int, str
         for j in range(len(string)):
             if string[j] == "I":
                 string[j] = " "
+        string.reverse()
         print(f"{str(i) : <3}" + " " + "".join(string))
     
     
@@ -44,7 +45,7 @@ def _select_nodes(
     minimum_pauli_weight = float("inf")
     selection: tuple[int, int, int] | None = None
 
-    for xx, zz in tqdm(
+    for xx, zz in tqdm(     # bash every permutation of xx, zz and greedily choose best
         permutations(nodes, 2),
         total=math.perm(len(nodes), 2),
         leave=False,
@@ -56,23 +57,25 @@ def _select_nodes(
         vac = nqubits * 2
         while vac in mapping:
             _, vac = mapping[vac]
-        if xx == vac:       
+        if xx == vac:               # the VAC operator should have a mapping to only Z operators. This enforces that.
             continue
         
         i = xx
-        while i in tree:            #find the Z child of the X branch, like the bonsai alg
+        while i in tree:            #find the Z child of the X branch
             i = tree[i][2]
-        if i % 2 == 0:              #now the Y branch will the be corresponding other majorana operator
+        if i % 2 == 0:              #now the Y branch will be the corresponding other majorana operator
             yy = i + 1
         else:
             yy = i - 1
-        while yy in mapping:
+        while yy in mapping:        # we know whatthe other majorana operator is. We now find what node it is under.
             _, yy = mapping[yy]
-        if zz == yy:                #shouldn't be the same
+        if zz == yy:                #check to make sure it isn't the same
             continue
             
         pauli_weight = 0
         for term in terms:
+            # for each mode in the term, map it to the corresponding gate based on the selection (or identity).
+            # XOR on simplectic vectors is equivalent to gates minus phase change.
             term = reduce(
                 lambda x, y: (x[0] ^ y[0], x[1] ^ y[1]),
                 map(
@@ -89,11 +92,13 @@ def _select_nodes(
                 ),
                 (False, False),
             )
+            # considered as a simplectic vector; if either is true, then we have a gate acting on this qubit.
             if term[0] or term[1]:
                 pauli_weight += 1
 
         # is the selection better ?
-        if pauli_weight <= minimum_pauli_weight:
+        # if yes, update selection.
+        if pauli_weight < minimum_pauli_weight:
             minimum_pauli_weight = pauli_weight
             selection = xx, yy, zz
     assert selection is not None
@@ -134,14 +139,17 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
         nodes.add(qubit_id)
 
         # reduce the Hamiltonian
+        # this allows us to consider individual qubits when computing intermediary pauli weights.
         for i in range(len(terms)):
             term = tuple(idx for idx in terms[i] if idx not in selection)
             terms[i] = (
-                term if (len(terms[i]) - len(term)) % 2 == 0 else (term + (qubit_id,))
+                term if (len(terms[i]) - len(term)) % 2 == 0 else (term + (qubit_id,))  
+                #if two modes were in the selection, they are siblings under a common node, and thus will cancel each other out. Otherwise, add in the new node.
             )
         terms = list(filter(lambda x: len(x) != 0, terms))
 
     # generate solution
+    # next statement helps see tree structure
     # print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
     return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
 
