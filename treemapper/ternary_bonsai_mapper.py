@@ -36,6 +36,7 @@ def print_tree(i: int, tree: dict[int, tuple[int, int, int]], nstrings: int, str
                 string[j] = " "
         string.reverse()
         print(f"{str(i) : <3}" + " " + "".join(string))
+        string.reverse()
     
     
 
@@ -150,7 +151,7 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
 
     # generate solution
     # next statement helps see tree structure
-    # print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
+    print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
     return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
 
 
