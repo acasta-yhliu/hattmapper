@@ -36,8 +36,6 @@ def print_tree(i: int, tree: dict[int, tuple[int, int, int]], nstrings: int, str
                 string[j] = " "
         string.reverse()
         print(f"{str(i) : <3}" + " " + "".join(string))
-    
-    
 
 def _select_nodes(
     terms: list[tuple[int, ...]], nodes: set[int], round: int, nqubits: int, tree: dict[int, tuple[int, int, int]], mapping: dict[int, tuple[str, int]]
@@ -124,10 +122,14 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
     #mapping for parent -> (x,y,z)
     tree: dict[int, tuple[int, int, int]] = {}
     
+    heights: dict[int, int] = {}
+    
     for round in range(nqubits):
         # the qubit that will become the new parent
         qubit_id = nstrings + round
-
+        
+        print(qubit_id)
+        
         # select the node with lowest Pauli weight
         selection = _select_nodes(terms, nodes, round, nqubits, tree, mapping)
 
@@ -150,7 +152,17 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
 
     # generate solution
     # next statement helps see tree structure
-    # print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
+    print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
+    for i in range(3 * nqubits + 1):
+        heights[i] = 0
+        if i in tree:
+            for child in tree[i]:
+                if child in heights:
+                    heights[i] = max(heights[child] + 1, heights[i])
+            
+    print(heights)
+    
+    
     return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
 
 

@@ -14,7 +14,7 @@ from qiskit_nature.second_q.algorithms import GroundStateEigensolver
 from .ternary_tree_mapper import HamiltonianTernaryTreeMapper
 from .extra_modes_tree_mapper import HamiltonianTernaryTreeExtraMapper
 from .huffmanesque_mapper import HamiltonianTernaryTreeHuffmanMapper
-from .ternary_bonsai_mapper import HamiltonianTernaryBonsaiMapper
+from .rotating_bonsai_mapper import HamiltonianTernaryBonsaiMapper
 
 from dataclasses import dataclass
 import math
@@ -109,13 +109,13 @@ def evaluate(
         hamiltonian = problem
     
     for mapper_name, mapper in [
-        (
-            "Our Method",
-            HamiltonianTernaryTreeMapper(
-                cast(FermionicOp, hamiltonian),
-                nqubits=hamiltonian.register_length,
-            ),
-        ),
+        # (
+        #     "Our Method",
+        #     HamiltonianTernaryTreeMapper(
+        #         cast(FermionicOp, hamiltonian),
+        #         nqubits=hamiltonian.register_length,
+        #     ),
+        # ),
         # ("Huffman:", 
         #     HamiltonianTernaryTreeHuffmanMapper(
         #     cast(FermionicOp, hamiltonian), 
@@ -128,8 +128,8 @@ def evaluate(
                 nqubits=hamiltonian.register_length,
             ),
         ),
-        ("Bravyi-Kitaev", BravyiKitaevMapper()),
-        ("Jordan-Wigner", JordanWignerMapper()),
+        # ("Bravyi-Kitaev", BravyiKitaevMapper()),
+        # ("Jordan-Wigner", JordanWignerMapper()),
     ]:
         start = time.time()
         #this runs too slow, might need to delete
