@@ -151,8 +151,7 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
 
     # generate solution
     # next statement helps see tree structure
-    #print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
-    
+    print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
     return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
 
 
