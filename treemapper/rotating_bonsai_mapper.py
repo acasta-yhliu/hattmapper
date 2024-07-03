@@ -159,6 +159,9 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
     # generate solution
     # next statement helps see tree structure
     print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
+    bonsai_strings: dict[int, str] = {}
+    for i in range(nstrings - 1):
+        bonsai_strings[i] = _walk_string(i, mapping, nqubits, nstrings)
     
     height_calc(heights, tree, nqubits)
     
@@ -194,6 +197,17 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
             tree = prevtree
         
     print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
+    
+    rotated_strings: dict[int, str] = {}
+    for i in range(nstrings - 1):
+        rotated_strings[i] = _walk_string(i, mapping, nqubits, nstrings)
+    
+    diff = 0
+    for i in range(nstrings - 1):
+        if rotated_strings[i] != bonsai_strings[i]:
+            diff += 1
+        
+    print("Difference = " + str(diff))
     
     return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
 

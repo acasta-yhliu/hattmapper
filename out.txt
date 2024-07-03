@@ -1,0 +1,12 @@
+LiH "Bonsai esque", Pauli weight = 2850
+LiH "Rotating Bonsai", Pauli weight = 3568
+H2O "Bonsai esque", Pauli weight = 5518
+H2O "Rotating Bonsai", Pauli weight = 6679
+Methane "Bonsai esque", Pauli weight = 38653
+Methane "Rotating Bonsai", Pauli weight = 39493
+N2 "Bonsai esque", Pauli weight = 20224
+N2 "Rotating Bonsai", Pauli weight = 20574
+Carbon Monoxide "Bonsai esque", Pauli weight = 39611
+Carbon Monoxide "Rotating Bonsai", Pauli weight = 41978
+O2 "Bonsai esque", Pauli weight = 13370
+O2 "Rotating Bonsai", Pauli weight = 15834

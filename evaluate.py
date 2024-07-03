@@ -9,7 +9,7 @@ parser = ArgumentParser()
 parser.add_argument(
     "-f",
     "--format",
-    choices=["default", "csv"],
+    choices=["default", "csv", "txt"],
     default="default",
     type=str,
     help="report format of the evaluation result",
@@ -31,8 +31,10 @@ parser.add_argument(
 
 if __name__ == "__main__":
     args = parser.parse_args()
-
-    evaluate(
+    if args.output != None:
+        open(args.output, "w").close()
+    open("out.txt", "w").close()
+    LiHTest = evaluate(
         "LiH",
         PySCFDriver(
             atom="H 0 0 0; Li 0 0 1.6",
@@ -42,9 +44,11 @@ if __name__ == "__main__":
             unit=DistanceUnit.ANGSTROM,
         ).run(),
         basis_gates=args.basis_gates.split(","),
-    ).report(args.format, output=args.output)
+    )
+    LiHTest.report(args.format, output=args.output)
+    LiHTest.report("txt", "out.txt")
     
-    evaluate(
+    H2OTest = evaluate(
         "H2O",
         PySCFDriver(
             atom='\
@@ -58,9 +62,11 @@ if __name__ == "__main__":
             unit=DistanceUnit.ANGSTROM,
         ).run(),
         basis_gates=args.basis_gates.split(","),
-    ).report(args.format, output=args.output)
+    )
+    H2OTest.report(args.format, output=args.output)
+    H2OTest.report("txt", "out.txt")
     
-    evaluate(
+    CH4Test = evaluate(
         "Methane",
         PySCFDriver(
             atom=loadMolecule("tests/methane.json"),
@@ -70,9 +76,11 @@ if __name__ == "__main__":
             unit=DistanceUnit.ANGSTROM,
         ).run(),
         basis_gates=args.basis_gates.split(","),
-    ).report(args.format, output=args.output)
+    )
+    CH4Test.report(args.format, output=args.output)
+    CH4Test.report("txt", "out.txt")
     
-    evaluate(
+    N2Test = evaluate(
         "N2",
         PySCFDriver(
             atom=loadMolecule('tests/n2.json'),
@@ -82,9 +90,25 @@ if __name__ == "__main__":
             unit=DistanceUnit.ANGSTROM,
         ).run(),
         basis_gates=args.basis_gates.split(","),
-    ).report(args.format, output=args.output)
+    )
+    N2Test.report(args.format, output=args.output)
+    N2Test.report("txt", "out.txt")
     
-    evaluate(
+    COTest = evaluate(
+        "Carbon Monoxide",
+        PySCFDriver(
+            atom=loadMolecule("tests/carbonmonoxide.json"),
+            basis="sto3g",
+            charge=0,
+            spin=0,
+            unit=DistanceUnit.ANGSTROM,
+        ).run(),
+        basis_gates=args.basis_gates.split(","),
+    )
+    COTest.report(args.format, output=args.output)
+    COTest.report("txt", "out.txt")
+    
+    O2Test = evaluate(
         "O2",
         PySCFDriver(
             atom='\
@@ -97,4 +121,20 @@ if __name__ == "__main__":
             unit=DistanceUnit.ANGSTROM,
         ).run(),
         basis_gates=args.basis_gates.split(","),
-    ).report(args.format, output=args.output)
+    )
+    O2Test.report(args.format, output=args.output)
+    O2Test.report("txt", "out.txt")
+    
+    EthaneTest = evaluate(
+        "Ethane",
+        PySCFDriver(
+            atom=loadMolecule("tests/ethane.json"),
+            basis="sto3g",
+            charge=0,
+            spin=0,
+            unit=DistanceUnit.ANGSTROM,
+        ).run(),
+        basis_gates=args.basis_gates.split(","),
+    )
+    EthaneTest.report(args.format, output=args.output)
+    EthaneTest.report("txt", "out.txt")

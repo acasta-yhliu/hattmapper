@@ -34,28 +34,30 @@ class EvaluationResult:
     
     times: list[time.time]
 
-    def report(self, format: Literal["default", "csv"], output: str | None):
+    def report(self, format: Literal["default", "csv", "txt"], output: str | None):
         if output is None:
             output_file = stdout
         else:
-            output_file = open(output, "w")
+            output_file = open(output, "a")
 
         print(self.format(format), file=output_file)
 
         if output is not None:
             output_file.close()
 
-    def format(self, format: Literal["default", "csv"]):
+    def format(self, format: Literal["default", "csv", "txt"]):
         if format == "default":
             return self._format_default()
         elif format == "csv":
             return self._format_csv()
+        elif format == "txt":
+            return self._format_txt()
 
     def _format_default(self):
         print(self.name + "Test:")
         for i in range(len(self.method)):
             print(self.method[i] + " Pauli Weight: " + str(self.pauli_weight[i]))
-            print("Time taken:" + str(self.times[i]))
+            #print("Time taken:" + str(self.times[i]))
 
     def _format_csv(self):
         print("warning: when reporting to csv, evaluation name is ignored")
@@ -73,6 +75,14 @@ class EvaluationResult:
 
         return "\n".join(lines)
 
+    def _format_txt(self):
+        lines = []
+        for i in range(len(self.method)):
+            lines.append(
+                f"{self.name} \"{self.method[i]}\", Pauli weight = {self.pauli_weight[i]}"
+            )
+
+        return "\n".join(lines)
 
 def _qiskit_lie_trotter(
     hamiltonian: SparsePauliOp, time: float, time_steps: int, basis_gates: list[str]
@@ -130,7 +140,7 @@ def evaluate(
             ),
         ),
         (
-            "Bonsai esque",
+            "Rotating Bonsai",
             HamiltonianRotatingBonsaiMapper(
                 cast(FermionicOp, hamiltonian),
                 nqubits=hamiltonian.register_length,
