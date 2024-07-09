@@ -13,30 +13,32 @@ import random
 ## We define a subroutine that takes in a physical connectivity graph P 
 ## as input, and computes a "close-enough" spanning ternary subtree to minimize
 ## SWAP gates and reduce circuit complexity.
-def mapper(P: dict[int, set[int]], tree: dict[int, tuple[int, int, int]], h: int) -> dict[int,int]:
+def mapper(P: dict[int, set[int]], 
+           tree: dict[int, tuple[int, int, int]], 
+           mapping: dict[int, tuple[str,int]],
+           heights: dict[int, int],
+           nqubits: int,
+           ) -> dict[int,int]:
     # Determine root node r: node which has the min max topological dist between any other node in P
-
+    h = max(heights.values())
     r = _find_root(P, h)
 
+
     # Define initial layer, L_0 = r, with height h = 0, and tree T = (V, E), where V and E are empty
-    L: list[set[int]] = [{r}]
     h = 0
-    V_T: set[int] = {}
-    E_T: set[tuple[int, int]] = {}
-    mapping: dict[int,int] = {}
+    physical: dict[int,int] = {}
+    physical[nqubits * 3 + 1] = r
     # Body of subroutine
-    while len(L[h]) > 0:
-        L_h_1: set[int] = {}
-        for v in L[h]:
+    while len(physical) < nqubits:
+        for v in tree[nqubits * 3 + 1]:             #nstrings + nqubits
             # let the set of unassigned neighbors of v be N_v, and ...
             N_v: set[int] = {}
             for w in P[v]: # iterate to find neighbors of v that are not in V_T (a.k.a. unassigned)
-                if w not in V_T:
+                if w not in physical.values:
                     N_v.add(w)
             if len(N_v) > 3:
                 # we want to select three random neighbors, if there exist more than 3
                 N_v = set(random.sample(N_v, 3))
-            L_h_1 = L_h_1.union(N_v)
             V_T = V_T.union(N_v)
             E: set[tuple[int, int]] = {}
             # track the new edges of our spanning tree
@@ -44,11 +46,10 @@ def mapper(P: dict[int, set[int]], tree: dict[int, tuple[int, int, int]], h: int
                 edge = (v, w)
                 E.add(edge)
             E_T = E_T.union(E)
-        L.append(L_h_1)
         h += 1
     
     # enumerate/iterate through all vertices in V_P but not in V_T
-    for u in set(P.keys()).difference(V_T):
+    for u in set(P.keys()).difference(physical.values()):
         # find vertices in V_T that are still available to connect
         # NOTE: NVM, this and the next part seem kind of annoying, 
         # will make a separate function for them later
@@ -56,21 +57,15 @@ def mapper(P: dict[int, set[int]], tree: dict[int, tuple[int, int, int]], h: int
         #for node in V_T:
 
         C: set[int] = {}
-
         if len(C) > 1:
             C = set(random.sample(C, 1))
-
-        V_T = V_T.union(C)
-        E: set[tuple[int]] = {}
-        
-        # for v in C: # going to change this later, definitely a better built-in way to do extract the singleton
+        # going to change this later, definitely a better built-in way to do extract the singleton
         v = list(C)[0]
-        edge = (u, v)
-        E.add(edge)
-        E_T = E_T.union(E)
+        physical[v] = u
     
     # return T
-    return mapping
+    return physical
+    
 
 
 ## Finds a root node r for the subroutine above.
@@ -81,7 +76,7 @@ def _find_root(P: dict[int, set[int]], h: int) -> int:
     candidate_root: int | None = None
     for node, _ in P:
         dist = _bfs(node, P) # run BFS to determine the max distance of any node from this node
-        if dist < min_max_dist and dist >= h:
+        if dist < min_max_dist and dist >= h - 1:
             min_max_dist = dist
             candidate_root = node
 
@@ -103,13 +98,13 @@ def _bfs(node: int, P: dict[int, set[int]]) -> int:
         queue.remove(0)
         curr_dist = dist_queue[0]
         dist_queue.remove(0)
-    for elt in P_copy[curr]: # examine all of the node's neighbors
-        queue.append(elt)
-        dist_queue.append(curr_dist + 1)
-        if curr_dist + 1 > furthest: # update furthest dist if curr dist is larger
-            furthest = curr_dist + 1
-        visited.add(curr) # mark current node as "visited"
-        P_copy[curr].remove(elt) #don't need to check if elt is visited or not
+        for elt in P_copy[curr]: # examine all of the node's neighbors
+            queue.append(elt)
+            dist_queue.append(curr_dist + 1)
+            if curr_dist + 1 > furthest: # update furthest dist if curr dist is larger
+                furthest = curr_dist + 1
+            visited.add(curr) # mark current node as "visited"
+            P_copy[curr].remove(elt) #don't need to check if elt is visited or not
 
     return furthest
 
@@ -261,14 +256,16 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
     #print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
     
     heights: dict[int,int] = {}
-    for i in range(nqubits + nstrings):
-        if i in tree:
-            x,y,z = tree[i]
-            heights[i] = max(heights[x], heights[y], heights[z])
+    for i in range(nqubits + nstrings - 1, -1, -1):
+        if i in mapping:
+            _, j = mapping[i]
+            heights[i] = heights[j] + 1
         else:
             heights[i] = 0
-    h = max(heights.values())
-    physical = mapper(P, tree, h)
+    
+    
+    print(heights)
+    physical = mapper(P, tree, mapping, heights, nqubits)
     
     return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
 
