@@ -21,33 +21,33 @@ def mapper(P: dict[int, set[int]],
            ) -> dict[int,int]:
     # Determine root node r: node which has the min max topological dist between any other node in P
     h = max(heights.values())
-    r = _find_root(P, h)
+    treepath: list[int] = []
+    i = list(heights.keys())[list(heights.values()).index(h)]
+    while i in mapping:
+        treepath.append(i)
+        _, i = mapping[i]
+    treepath.reverse()
+    r, longest = _find_root(P, h)
 
 
     # Define initial layer, L_0 = r, with height h = 0, and tree T = (V, E), where V and E are empty
     h = 0
     physical: dict[int,int] = {}
-    physical[nqubits * 3 + 1] = r
+    if len(treepath) == len(longest):
+        for i in range(len(treepath)):
+            physical[treepath[i]] = longest[i]
+    physical[nqubits * 3] = r
     # Body of subroutine
-    while len(physical) < nqubits:
-        for v in tree[nqubits * 3 + 1]:             #nstrings + nqubits
-            # let the set of unassigned neighbors of v be N_v, and ...
-            N_v: set[int] = {}
-            for w in P[v]: # iterate to find neighbors of v that are not in V_T (a.k.a. unassigned)
-                if w not in physical.values:
-                    N_v.add(w)
-            if len(N_v) > 3:
-                # we want to select three random neighbors, if there exist more than 3
-                N_v = set(random.sample(N_v, 3))
-            V_T = V_T.union(N_v)
-            E: set[tuple[int, int]] = {}
-            # track the new edges of our spanning tree
-            for w in N_v:
-                edge = (v, w)
-                E.add(edge)
-            E_T = E_T.union(E)
-        h += 1
-    
+    for i in range(nqubits * 3, nqubits * 2 + 1, -1):
+        if i in physical:
+            continue
+        # let the set of unassigned neighbors of v be N_v, and ...
+        _, parent = mapping[i]
+        for w in P[parent]: # iterate to find neighbors of v that are not in V_T (a.k.a. unassigned)
+            if w not in physical.values():
+                physical[i] = w
+                break
+        
     # enumerate/iterate through all vertices in V_P but not in V_T
     for u in set(P.keys()).difference(physical.values()):
         # find vertices in V_T that are still available to connect
@@ -56,7 +56,7 @@ def mapper(P: dict[int, set[int]],
         #A = {}
         #for node in V_T:
 
-        C: set[int] = {}
+        C: set[int] = set(physical.keys).difference(range(nqubits * 2 + 2, nqubits * 3 + 1, 1))
         if len(C) > 1:
             C = set(random.sample(C, 1))
         # going to change this later, definitely a better built-in way to do extract the singleton
@@ -72,17 +72,26 @@ def mapper(P: dict[int, set[int]],
 ## NOTE: this approach is quite naive (mainly for general prototyping) 
 ##       and can possibly be optimized for runtime performance.
 def _find_root(P: dict[int, set[int]], h: int) -> tuple[int, list[int]]:
-    #min_max_dist = float("inf") # make it a large number for now
+    min_max_dist = float("inf") # make it a large number for now
     candidate_root: int | None = None
     candidate_path: list[int] | None = None
-    for node, _ in P:
+    for node in P.keys():
         (dist, path) = _bfs(node, P) # run BFS to determine the max distance of any node from this node
-        #if dist < min_max_dist and dist >= h:
-        if dist >= h - 1:
-            #min_max_dist = dist
+        if dist < min_max_dist and dist >= h - 1:
+            min_max_dist = dist
             candidate_root = node
             candidate_path = path
-
+            
+    #if there isn't a long enough path, just choose the most central
+    #this might not work?
+    if min_max_dist != h - 1:
+        for node in P.keys():
+            (dist, path) = _bfs(node, P) # run BFS to determine the max distance of any node from this node
+            if dist < min_max_dist:
+                min_max_dist = dist
+                candidate_root = node
+                candidate_path = path
+                
     assert candidate_root is not None
     assert candidate_path is not None
     return (candidate_root, candidate_path)
@@ -94,8 +103,8 @@ def _bfs(node: int, P: dict[int, set[int]]) -> tuple[int, list[int]]:
     furthest = 0 # initialize furthest distance to be 0 at first
     longest_path: list[int] = [] # will store the longest path
 
-    P_copy = P
-    visited = {}
+
+    visited: set[int] = set()
     queue = [] # the list that serves as a queue that determines order of exploration in BFS
     dist_queue = [] # keeps track of the distance we're at
     paths: list[list[int]] = []
@@ -108,24 +117,24 @@ def _bfs(node: int, P: dict[int, set[int]]) -> tuple[int, list[int]]:
 
     while len(queue) > 0: # keep exploring until all nodes have been "visited"
         curr = queue[0]
-        queue.remove(0)
+        queue.pop(0)
         curr_dist = dist_queue[0]
-        dist_queue.remove(0)
+        dist_queue.pop(0)
         curr_path = paths[0]
-        paths.remove(0)
-        for elt in P_copy[curr]: # examine all of the node's neighbors
-            queue.append(elt)
-            dist_queue.append(curr_dist + 1)
+        paths.pop(0)
+        for elt in P[curr]: # examine all of the node's neighbors
+            if elt not in visited:
+                queue.append(elt)
+                dist_queue.append(curr_dist + 1)
 
-            curr_path_copy = curr_path
-            curr_path_copy.append(elt)
-            paths.append(curr_path_copy)
+                curr_path_copy = curr_path
+                curr_path_copy.append(elt)
+                paths.append(curr_path_copy)
 
-            if curr_dist + 1 > furthest: # update furthest dist if curr dist is larger
-                furthest = curr_dist + 1
-                longest_path = curr_path_copy
-            visited.add(curr) # mark current node as "visited"
-            P_copy[curr].remove(elt) #don't need to check if elt is visited or not
+                if curr_dist + 1 > furthest: # update furthest dist if curr dist is larger
+                    furthest = curr_dist + 1
+                    longest_path = curr_path_copy
+                visited.add(curr) # mark current node as "visited"
 
     return (furthest, longest_path)
 
@@ -274,7 +283,7 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
 
     # generate solution
     # next statement helps see tree structure
-    #print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
+    #print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)], physical)
     
     heights: dict[int,int] = {}
     for i in range(nqubits + nstrings - 1, -1, -1):
@@ -286,9 +295,14 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
     
     
     print(heights)
+    P: dict[int, set[int]] = {
+        0: {1,2,3},
+        1: {0},
+        2: {0},
+        3: {0}
+    }
     physical = mapper(P, tree, mapping, heights, nqubits)
-    
-    return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
+    return [_walk_string(i, mapping, nqubits, nstrings, physical) for i in range(nstrings - 1)]
 
 
 class HamiltonianTernaryConnectivityMapper(ModeBasedMapper, FermionicMapper):
