@@ -13,16 +13,17 @@ import random
 ## We define a subroutine that takes in a physical connectivity graph P 
 ## as input, and computes a "close-enough" spanning ternary subtree to minimize
 ## SWAP gates and reduce circuit complexity.
-def _qubit_spanning_tree(P: dict[int, set[int]]) -> tuple[set[int], set[tuple[int, int]]]:
+def mapper(P: dict[int, set[int]], tree: dict[int, tuple[int, int, int]], h: int) -> dict[int,int]:
     # Determine root node r: node which has the min max topological dist between any other node in P
-    r = _find_root(P)
+
+    r = _find_root(P, h)
 
     # Define initial layer, L_0 = r, with height h = 0, and tree T = (V, E), where V and E are empty
     L: list[set[int]] = [{r}]
     h = 0
     V_T: set[int] = {}
     E_T: set[tuple[int, int]] = {}
-
+    mapping: dict[int,int] = {}
     # Body of subroutine
     while len(L[h]) > 0:
         L_h_1: set[int] = {}
@@ -69,18 +70,18 @@ def _qubit_spanning_tree(P: dict[int, set[int]]) -> tuple[set[int], set[tuple[in
         E_T = E_T.union(E)
     
     # return T
-    return (V_T, E_T)
+    return mapping
 
 
 ## Finds a root node r for the subroutine above.
 ## NOTE: this approach is quite naive (mainly for general prototyping) 
 ##       and can possibly be optimized for runtime performance.
-def _find_root(P: dict[int, set[int]]) -> int:
+def _find_root(P: dict[int, set[int]], h: int) -> int:
     min_max_dist = float("inf") # make it a large number for now
     candidate_root: int | None = None
     for node, _ in P:
         dist = _bfs(node, P) # run BFS to determine the max distance of any node from this node
-        if dist < min_max_dist:
+        if dist < min_max_dist and dist >= h:
             min_max_dist = dist
             candidate_root = node
 
@@ -258,6 +259,17 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
     # generate solution
     # next statement helps see tree structure
     #print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
+    
+    heights: dict[int,int] = {}
+    for i in range(nqubits + nstrings):
+        if i in tree:
+            x,y,z = tree[i]
+            heights[i] = max(heights[x], heights[y], heights[z])
+        else:
+            heights[i] = 0
+    h = max(heights.values())
+    physical = mapper(P, tree, h)
+    
     return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
 
 

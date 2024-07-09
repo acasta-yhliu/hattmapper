@@ -4,6 +4,7 @@ from qiskit_nature.second_q.drivers import PySCFDriver
 from utility import Simulation
 from ternary_tree_mapper import HamiltonianTernaryTreeMapper
 from ternary_bonsai_mapper import HamiltonianTernaryBonsaiMapper
+from connectivity_conscious_mapper import HamiltonianTernaryConnectivityMapper
 from qiskit.synthesis import LieTrotter, QDrift
 
 from qiskit_nature.second_q.mappers import BravyiKitaevMapper, JordanWignerMapper
@@ -29,5 +30,6 @@ simulation = Simulation(fermionic_hamiltonian, JordanWignerMapper())
 print(simulation.simulate())
 
 simulation = Simulation(fermionic_hamiltonian, HamiltonianTernaryBonsaiMapper(fermionic_hamiltonian))
+simulation = Simulation(fermionic_hamiltonian, HamiltonianTernaryConnectivityMapper(fermionic_hamiltonian))
 
 print(simulation.simulate())
