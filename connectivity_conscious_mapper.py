@@ -11,7 +11,7 @@ from tqdm import tqdm
 import random
 
 ## We define a subroutine that takes in a physical connectivity graph P 
-## as input, and computes a "close-enough" spanning ternary subtree to minimize
+## as input, and computes a "close-enough" mapping to minimize
 ## SWAP gates and reduce circuit complexity.
 def mapper(P: dict[int, set[int]], tree: dict[int, tuple[int, int, int]], h: int) -> dict[int,int]:
     # Determine root node r: node which has the min max topological dist between any other node in P
@@ -76,42 +76,63 @@ def mapper(P: dict[int, set[int]], tree: dict[int, tuple[int, int, int]], h: int
 ## Finds a root node r for the subroutine above.
 ## NOTE: this approach is quite naive (mainly for general prototyping) 
 ##       and can possibly be optimized for runtime performance.
-def _find_root(P: dict[int, set[int]], h: int) -> int:
-    min_max_dist = float("inf") # make it a large number for now
+def _find_root(P: dict[int, set[int]], h: int) -> tuple[int, list[int]]:
+    #min_max_dist = float("inf") # make it a large number for now
     candidate_root: int | None = None
+    candidate_path: list[int] | None = None
     for node, _ in P:
-        dist = _bfs(node, P) # run BFS to determine the max distance of any node from this node
-        if dist < min_max_dist and dist >= h:
-            min_max_dist = dist
+        (dist, path) = _bfs(node, P) # run BFS to determine the max distance of any node from this node
+        #if dist < min_max_dist and dist >= h:
+        if dist >= h:
+            #min_max_dist = dist
             candidate_root = node
+            candidate_path = path
 
     assert candidate_root is not None
-    return candidate_root
+    assert candidate_path is not None
+    return (candidate_root, candidate_path)
 
 ## Runs BFS from a specified node on the given graph P,
 ## returns longest topological dist from given node
-def _bfs(node: int, P: dict[int, set[int]]) -> int:
+## and the nodes along that path
+def _bfs(node: int, P: dict[int, set[int]]) -> tuple[int, list[int]]:
     furthest = 0 # initialize furthest distance to be 0 at first
+    longest_path: list[int] = [] # will store the longest path
+
     P_copy = P
     visited = {}
-    queue = []
-    dist_queue = []
+    queue = [] # the list that serves as a queue that determines order of exploration in BFS
+    dist_queue = [] # keeps track of the distance we're at
+    paths: list[list[int]] = []
+
     queue.append(node)
     dist_queue.append(0)
+
+    init_path = [node]
+    paths.append(init_path) # initial path only contains root node for now
+
     while len(queue) > 0: # keep exploring until all nodes have been "visited"
         curr = queue[0]
         queue.remove(0)
         curr_dist = dist_queue[0]
         dist_queue.remove(0)
-    for elt in P_copy[curr]: # examine all of the node's neighbors
-        queue.append(elt)
-        dist_queue.append(curr_dist + 1)
-        if curr_dist + 1 > furthest: # update furthest dist if curr dist is larger
-            furthest = curr_dist + 1
-        visited.add(curr) # mark current node as "visited"
-        P_copy[curr].remove(elt) #don't need to check if elt is visited or not
+        curr_path = paths[0]
+        paths.remove(0)
+        for elt in P_copy[curr]: # examine all of the node's neighbors
+            queue.append(elt)
+            dist_queue.append(curr_dist + 1)
 
-    return furthest
+            curr_path_copy = curr_path
+            curr_path_copy.append(elt)
+            paths.append(curr_path_copy)
+
+            if curr_dist + 1 > furthest: # update furthest dist if curr dist is larger
+                furthest = curr_dist + 1
+                longest_path = curr_path_copy
+            visited.add(curr) # mark current node as "visited"
+            P_copy[curr].remove(elt) #don't need to check if elt is visited or not
+
+    return (furthest, longest_path)
 
 
 def _walk_string(
