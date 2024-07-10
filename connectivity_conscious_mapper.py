@@ -3,12 +3,16 @@ from qiskit_nature.second_q.operators import FermionicOp, MajoranaOp
 from qiskit_nature.second_q.mappers.fermionic_mapper import FermionicMapper
 from qiskit_nature.second_q.mappers.mode_based_mapper import ModeBasedMapper
 
+from qiskit.transpiler import CouplingMap
+from qiskit_ibm_runtime.fake_provider import FakeBrooklynV2
+
 from itertools import combinations, permutations
 from functools import reduce
 import math
 from tqdm import tqdm
 
 import random
+import copy
 
 ## We define a subroutine that takes in a physical connectivity graph P 
 ## as input, and computes a "close-enough" mapping to minimize
@@ -26,44 +30,38 @@ def mapper(P: dict[int, set[int]],
     while i in mapping:
         treepath.append(i)
         _, i = mapping[i]
-    treepath.reverse()
     r, longest = _find_root(P, h)
-
-
-    # Define initial layer, L_0 = r, with height h = 0, and tree T = (V, E), where V and E are empty
-    h = 0
+    #assigns the longest path in the tree to the longest path in our bfs from the root.
     physical: dict[int,int] = {}
     if len(treepath) == len(longest):
         for i in range(len(treepath)):
             physical[treepath[i]] = longest[i]
+    #root is always the root of the tree
     physical[nqubits * 3] = r
     # Body of subroutine
     for i in range(nqubits * 3, nqubits * 2 + 1, -1):
         if i in physical:
             continue
-        # let the set of unassigned neighbors of v be N_v, and ...
         _, parent = mapping[i]
-        for w in P[parent]: # iterate to find neighbors of v that are not in V_T (a.k.a. unassigned)
-            if w not in physical.values():
+        for w in P[physical[parent]]: # iterate to find neighbors of v that are unassigned
+            if w not in physical.values():  #find one thats not assigned? assign it.
                 physical[i] = w
                 break
         
-    # enumerate/iterate through all vertices in V_P but not in V_T
+    # enumerate/iterate through all vertices that have not been mapped to
     for u in set(P.keys()).difference(physical.values()):
-        # find vertices in V_T that are still available to connect
-        # NOTE: NVM, this and the next part seem kind of annoying, 
-        # will make a separate function for them later
-        #A = {}
-        #for node in V_T:
-
-        C: set[int] = set(physical.keys).difference(range(nqubits * 2 + 2, nqubits * 3 + 1, 1))
+        #all this does currently is: finds a qubit that has not been mapped onto the tree yet randomly, and assign it to that in the set.
+        #this definitely could be optimized, such that the qubit is assigned as a child of node with qubit x such that physical distance to x is minimized
+        #(thus lowering swaps needed)
+        C: set[int] = set(range(nqubits * 2 + 1, nqubits * 3 + 1, 1)).difference(set(physical.keys()))
         if len(C) > 1:
             C = set(random.sample(C, 1))
-        # going to change this later, definitely a better built-in way to do extract the singleton
-        v = list(C)[0]
-        physical[v] = u
+        if len(C) == 1:
+            [v] = C
+            physical[v] = u
     
     # return T
+    print(physical)
     return physical
     
 
@@ -127,7 +125,7 @@ def _bfs(node: int, P: dict[int, set[int]]) -> tuple[int, list[int]]:
                 queue.append(elt)
                 dist_queue.append(curr_dist + 1)
 
-                curr_path_copy = curr_path
+                curr_path_copy = copy.deepcopy(curr_path)
                 curr_path_copy.append(elt)
                 paths.append(curr_path_copy)
 
@@ -294,7 +292,6 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
             heights[i] = 0
     
     
-    print(heights)
     P: dict[int, set[int]] = {
         0: {1,2,3},
         1: {0},
