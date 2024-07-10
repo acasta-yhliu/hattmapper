@@ -7,6 +7,7 @@ from ternary_bonsai_mapper import HamiltonianTernaryBonsaiMapper
 from connectivity_conscious_mapper import HamiltonianTernaryConnectivityMapper
 from qiskit.synthesis import LieTrotter, QDrift
 
+
 from qiskit_nature.second_q.mappers import BravyiKitaevMapper, JordanWignerMapper
 
 fermionic_hamiltonian = (
@@ -21,9 +22,6 @@ fermionic_hamiltonian = (
     .hamiltonian.second_q_op()
 )
 
-# simulation = Simulation(
-#     fermionic_hamiltonian, HamiltonianTernaryBonsaiMapper(fermionic_hamiltonian)
-# )
 
 simulation = Simulation(fermionic_hamiltonian, JordanWignerMapper())
 

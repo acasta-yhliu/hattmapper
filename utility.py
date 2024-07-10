@@ -17,6 +17,9 @@ from qiskit_aer import noise
 from qiskit_aer.primitives import Estimator
 from qiskit_aer.library import set_statevector
 
+from qiskit.transpiler import CouplingMap
+from qiskit_ibm_runtime.fake_provider import FakeBrooklynV2
+
 import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -114,7 +117,7 @@ class Simulation:
         self.circuit.set_statevector(initial_state)  # type: ignore
         self.circuit.append(pe, range(pe.num_qubits))
         self.circuit = transpile(
-            self.circuit, basis_gates=basis_gates, optimization_level=3
+            self.circuit, basis_gates=basis_gates, optimization_level=3, #coupling_map=FakeBrooklynV2().coupling_map
         )
 
         print("  Circuit summary:")
@@ -214,3 +217,63 @@ def load_molecule(file: str):
                 + "; "
             )
     return represent
+
+
+class Evaluation:
+    def __init__(
+        self,
+        fermionic_hamiltonian: FermionicOp,
+        mapper: FermionicMapper,
+        time: float = 1.0,
+        basis_gates: list[str] = ["cx", "u3", "set_statevector"],
+        synthesis: EvolutionSynthesis = LieTrotter(),
+    ) -> None:
+        print("Hamiltonian simulation:")
+
+        self.basis_gates = basis_gates
+        self.fermionic_hamiltonian = fermionic_hamiltonian
+        self.fermionic_mappper = mapper
+
+        # this is also the observable
+        self.qubit_hamiltonian: SparsePauliOp = mapper.map(fermionic_hamiltonian)  # type: ignore
+
+        print("  Solve ground state:")
+
+        result = GroundStateEigensolver(mapper, NumPyMinimumEigensolver()).solve(
+            BaseProblem(FermionicHamiltonian(self.fermionic_hamiltonian))
+        )
+
+        assert result.groundstate is not None
+        preparation = result.groundstate[0]
+
+        initial_state = Statevector.from_instruction(preparation)
+
+        print(f"    Ground energy = {result.groundenergy}")
+
+        print("  Construct and transpile Pauli evolution:")
+        print(f"    Time duration    = {time}")
+        print(f"    Basis gates      = {', '.join(basis_gates)}")
+        print(f"    Synthesis method = {synthesis.__class__.__name__}")
+
+        pe = PauliEvolutionGate(self.qubit_hamiltonian, time=time, synthesis=synthesis)
+        self.circuit = QuantumCircuit(pe.num_qubits)
+        self.circuit.append(pe, range(pe.num_qubits))
+        self.circuit = transpile(
+            self.circuit, basis_gates=basis_gates, optimization_level=3, #coupling_map=FakeBrooklynV2().coupling_map
+        )
+
+        print("  Circuit summary:")
+        print(f"    Depth = {self.circuit_depth}")
+        counted_gates = [
+            f"{counts} {op.upper()}" for op, counts in self.circuit_gates.items()
+        ]
+        print(f"    Gates = {', '.join(counted_gates)}")
+
+
+    @property
+    def circuit_gates(self) -> dict[str, int]:
+        return {str(k): v for k, v in self.circuit.count_ops().items()}
+
+    @property
+    def circuit_depth(self) -> int:
+        return self.circuit.depth()

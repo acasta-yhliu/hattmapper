@@ -61,7 +61,7 @@ def mapper(P: dict[int, set[int]],
             physical[v] = u
     
     # return T
-    print(physical)
+    #print(physical)
     return physical
     
 
@@ -298,6 +298,8 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
         2: {0},
         3: {0}
     }
+    hardware = FakeBrooklynV2()
+    print(hardware.coupling_map)
     physical = mapper(P, tree, mapping, heights, nqubits)
     return [_walk_string(i, mapping, nqubits, nstrings, physical) for i in range(nstrings - 1)]
 
