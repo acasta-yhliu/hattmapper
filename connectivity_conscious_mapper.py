@@ -32,13 +32,18 @@ def mapper(
     while i in mapping:
         treepath.append(i)
         _, i = mapping[i]
+    treepath.append(i)
+    treepath.pop(0)
     r, longest = _find_root(P, h)
     #assigns the longest path in the tree to the longest path in our bfs from the root.
     physical: dict[int,int] = {}
+    reversed(longest)
     if len(treepath) == len(longest):
         for i in range(len(treepath)):
             physical[treepath[i]] = longest[i]
     #root is always the root of the tree
+    print(treepath)
+    print(physical)
     physical[nqubits * 3] = r
     # Body of subroutine
     for i in range(nqubits * 3, nqubits * 2 + 1, -1):
@@ -49,6 +54,7 @@ def mapper(
             if w not in physical.values():  #find one thats not assigned? assign it.
                 physical[i] = w
                 break
+    
         
     # # enumerate/iterate through all vertices that have not been mapped to
     # for u in set(P.keys()).difference(physical.values()):
@@ -63,7 +69,7 @@ def mapper(
     #         [v] = C
     #         physical[v] = u
             
-
+    # if a tree node has not yet recieved a mapping, map it to the physically closest qubit to its parent
     for i in range(nqubits * 2 + 1, nqubits * 3 + 1, 1):
         if i in physical:
             continue
@@ -76,7 +82,7 @@ def mapper(
         
     
     # return T
-    #print(physical)
+    print(physical)
     return physical
     
 
