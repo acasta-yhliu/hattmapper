@@ -5,7 +5,7 @@ from qiskit_nature.second_q.mappers.mode_based_mapper import ModeBasedMapper
 
 from architecture import Architecture
 
-from itertools import combinations, permutations
+from itertools import permutations
 from functools import reduce
 import math
 from tqdm import tqdm

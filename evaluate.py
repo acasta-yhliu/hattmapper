@@ -12,7 +12,7 @@ from qiskit_nature.second_q.mappers import BravyiKitaevMapper, JordanWignerMappe
 
 fermionic_hamiltonian = (
     PySCFDriver(
-        atom="H 0 0 0; H 0 0 0.735",
+        atom="H 0 0 0; Li 0 0 1.6",
         basis="sto3g",
         charge=0,
         spin=0,
@@ -29,8 +29,8 @@ fermionic_hamiltonian = (
 
 simulation = Simulation(fermionic_hamiltonian, HamiltonianTernaryBonsaiMapper(fermionic_hamiltonian))
 
-print(simulation.simulate())
+#print(simulation.simulate())
 
 simulation = Simulation(fermionic_hamiltonian, HamiltonianTernaryConnectivityMapper(fermionic_hamiltonian))
 
-print(simulation.simulate())
+#print(simulation.simulate())

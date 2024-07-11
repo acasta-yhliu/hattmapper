@@ -4,10 +4,9 @@ from qiskit_nature.second_q.mappers.fermionic_mapper import FermionicMapper
 from qiskit_nature.second_q.mappers.mode_based_mapper import ModeBasedMapper
 
 from qiskit.transpiler import CouplingMap
-import qiskit_ibm_runtime.fake_provider
 from architecture import Architecture
 
-from itertools import combinations, permutations
+from itertools import permutations
 from functools import reduce
 import math
 from tqdm import tqdm
@@ -42,8 +41,6 @@ def mapper(
         for i in range(len(treepath)):
             physical[treepath[i]] = longest[i]
     #root is always the root of the tree
-    print(treepath)
-    print(physical)
     physical[nqubits * 3] = r
     # Body of subroutine
     for i in range(nqubits * 3, nqubits * 2 + 1, -1):
@@ -75,12 +72,13 @@ def mapper(
             continue
         min_dist = float("inf")
         for u in set(P.keys()).difference(physical.values()):
-            if Architecture.coupling_map.shortest_undirected_path(physical[mapping[i]], u) < min_dist:
-                min_dist = Architecture.coupling_map.shortest_undirected_path(physical[mapping[i]], u)
+            u_dist = len(Architecture.coupling_map.shortest_undirected_path(physical[mapping[i][1]], u))
+            if u_dist < min_dist:
+                min_dist = u_dist
                 closest = u
         physical[i] = closest
         
-    
+    print(tree)
     # return T
     print(physical)
     return physical
@@ -173,11 +171,11 @@ def _walk_string(
 def print_tree(i: int, tree: dict[int, tuple[int, int, int]], nstrings: int, string: str, phys: dict[int,int]):
     if i in tree:       #print recursively. This helps retain some structure that we can observe.
         string[phys[i]] = "X"
-        print_tree(tree[i][0], tree, nstrings, string)
+        print_tree(tree[i][0], tree, nstrings, string, phys)
         string[phys[i]] = "Y"
-        print_tree(tree[i][1], tree, nstrings, string)
+        print_tree(tree[i][1], tree, nstrings, string, phys)
         string[phys[i]] = "Z"
-        print_tree(tree[i][2], tree, nstrings, string)    
+        print_tree(tree[i][2], tree, nstrings, string, phys)    
         string[phys[i]] = "I"
     else:
         for j in range(len(string)):
@@ -300,9 +298,6 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
             )
         terms = list(filter(lambda x: len(x) != 0, terms))
 
-    # generate solution
-    # next statement helps see tree structure
-    #print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)], physical)
     
     heights: dict[int,int] = {}
     for i in range(nqubits + nstrings - 1, -1, -1):
@@ -312,9 +307,12 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
         else:
             heights[i] = 0
     
-    
     P = Architecture.adj_list
     physical = mapper(tree, mapping, heights, nqubits)
+    
+    # generate solution
+    # next statement helps see tree structure
+    #print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(Architecture.nqubits)], physical)
     return [_walk_string(i, mapping, nstrings, physical) for i in range(nstrings - 1)]
 
 
