@@ -18,7 +18,8 @@ from qiskit_aer.primitives import Estimator
 from qiskit_aer.library import set_statevector
 
 from qiskit.transpiler import CouplingMap
-from qiskit_ibm_runtime.fake_provider import FakeBrooklynV2
+import qiskit_ibm_runtime.fake_provider
+from architecture import Architecture
 
 import warnings
 

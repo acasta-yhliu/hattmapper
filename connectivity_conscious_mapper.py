@@ -4,7 +4,8 @@ from qiskit_nature.second_q.mappers.fermionic_mapper import FermionicMapper
 from qiskit_nature.second_q.mappers.mode_based_mapper import ModeBasedMapper
 
 from qiskit.transpiler import CouplingMap
-from qiskit_ibm_runtime.fake_provider import FakeBrooklynV2
+import qiskit_ibm_runtime.fake_provider
+from architecture import Architecture
 
 from itertools import combinations, permutations
 from functools import reduce
@@ -298,8 +299,10 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
         2: {0},
         3: {0}
     }
-    hardware = FakeBrooklynV2()
+    hardware = Architecture.hardware
     print(hardware.coupling_map)
+    print(Architecture.nqubits)
+    print(Architecture.adj_list)
     physical = mapper(P, tree, mapping, heights, nqubits)
     return [_walk_string(i, mapping, nqubits, nstrings, physical) for i in range(nstrings - 1)]
 
