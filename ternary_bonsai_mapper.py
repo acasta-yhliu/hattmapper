@@ -3,6 +3,8 @@ from qiskit_nature.second_q.operators import FermionicOp, MajoranaOp
 from qiskit_nature.second_q.mappers.fermionic_mapper import FermionicMapper
 from qiskit_nature.second_q.mappers.mode_based_mapper import ModeBasedMapper
 
+from architecture import Architecture
+
 from itertools import combinations, permutations
 from functools import reduce
 import math
@@ -10,9 +12,9 @@ from tqdm import tqdm
 
 
 def _walk_string(
-    i: int, mapping: dict[int, tuple[str, int]], nqubits: int, nstrings: int
+    i: int, mapping: dict[int, tuple[str, int]], nstrings: int
 ):
-    string = ["I" for _ in range(nqubits)]
+    string = ["I" for _ in range(Architecture.nqubits)]
 
     while i in mapping:             #move up the tree until we get to the root (the root has no parent and is not in mapping)
         op, i = mapping[i]
@@ -152,7 +154,7 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
     # generate solution
     # next statement helps see tree structure
     #print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
-    return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
+    return [_walk_string(i, mapping, nstrings) for i in range(nstrings - 1)]
 
 
 class HamiltonianTernaryBonsaiMapper(ModeBasedMapper, FermionicMapper):

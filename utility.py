@@ -17,8 +17,6 @@ from qiskit_aer import noise
 from qiskit_aer.primitives import Estimator
 from qiskit_aer.library import set_statevector
 
-from qiskit.transpiler import CouplingMap
-import qiskit_ibm_runtime.fake_provider
 from architecture import Architecture
 
 import warnings
@@ -114,11 +112,11 @@ class Simulation:
         print(f"    Synthesis method = {synthesis.__class__.__name__}")
 
         pe = PauliEvolutionGate(self.qubit_hamiltonian, time=time, synthesis=synthesis)
-        self.circuit = QuantumCircuit(pe.num_qubits)
+        self.circuit = QuantumCircuit(Architecture.nqubits)
         self.circuit.set_statevector(initial_state)  # type: ignore
-        self.circuit.append(pe, range(pe.num_qubits))
+        self.circuit.append(pe, range(Architecture.nqubits))
         self.circuit = transpile(
-            self.circuit, basis_gates=basis_gates, optimization_level=3, #coupling_map=FakeBrooklynV2().coupling_map
+            self.circuit, basis_gates=basis_gates, optimization_level=3, coupling_map=Architecture.coupling_map
         )
 
         print("  Circuit summary:")

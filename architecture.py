@@ -1,11 +1,6 @@
-from typing import Literal
-import json
-
-from qiskit.transpiler import CouplingMap
 import qiskit_ibm_runtime.fake_provider
 
-import warnings
-
+#This class allows us to quickly change around our files for quicker testing.
 class Architecture():
     hardware = qiskit_ibm_runtime.fake_provider.FakeAthensV2()
     nqubits = hardware.num_qubits

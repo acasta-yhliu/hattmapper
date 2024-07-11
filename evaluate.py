@@ -23,9 +23,9 @@ fermionic_hamiltonian = (
 )
 
 
-simulation = Simulation(fermionic_hamiltonian, JordanWignerMapper())
+# simulation = Simulation(fermionic_hamiltonian, JordanWignerMapper())
 
-print(simulation.simulate())
+# print(simulation.simulate())
 
 simulation = Simulation(fermionic_hamiltonian, HamiltonianTernaryBonsaiMapper(fermionic_hamiltonian))
 

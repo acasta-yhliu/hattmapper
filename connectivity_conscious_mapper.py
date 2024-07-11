@@ -18,7 +18,7 @@ import copy
 ## We define a subroutine that takes in a physical connectivity graph P 
 ## as input, and computes a "close-enough" mapping to minimize
 ## SWAP gates and reduce circuit complexity.
-def mapper(P: dict[int, set[int]], 
+def mapper(
            tree: dict[int, tuple[int, int, int]], 
            mapping: dict[int, tuple[str,int]],
            heights: dict[int, int],
@@ -28,6 +28,7 @@ def mapper(P: dict[int, set[int]],
     h = max(heights.values())
     treepath: list[int] = []
     i = list(heights.keys())[list(heights.values()).index(h)]
+    P = Architecture.adj_list
     while i in mapping:
         treepath.append(i)
         _, i = mapping[i]
@@ -49,17 +50,30 @@ def mapper(P: dict[int, set[int]],
                 physical[i] = w
                 break
         
-    # enumerate/iterate through all vertices that have not been mapped to
-    for u in set(P.keys()).difference(physical.values()):
-        #all this does currently is: finds a qubit that has not been mapped onto the tree yet randomly, and assign it to that in the set.
-        #this definitely could be optimized, such that the qubit is assigned as a child of node with qubit x such that physical distance to x is minimized
-        #(thus lowering swaps needed)
-        C: set[int] = set(range(nqubits * 2 + 1, nqubits * 3 + 1, 1)).difference(set(physical.keys()))
-        if len(C) > 1:
-            C = set(random.sample(C, 1))
-        if len(C) == 1:
-            [v] = C
-            physical[v] = u
+    # # enumerate/iterate through all vertices that have not been mapped to
+    # for u in set(P.keys()).difference(physical.values()):
+    #     #all this does currently is: finds a qubit that has not been mapped onto the tree yet randomly, and assign it to that in the set.
+    #     #this definitely could be optimized, such that the qubit is assigned as a child of node with qubit x such that physical distance to x is minimized
+    #     #(thus lowering swaps needed)
+    #     C: set[int] = set(range(nqubits * 2 + 1, nqubits * 3 + 1, 1)).difference(set(physical.keys()))
+        
+    #     if len(C) > 1:
+    #         C = set(random.sample(C, 1))
+    #     if len(C) == 1:
+    #         [v] = C
+    #         physical[v] = u
+            
+
+    for i in range(nqubits * 2 + 1, nqubits * 3 + 1, 1):
+        if i in physical:
+            continue
+        min_dist = float("inf")
+        for u in set(P.keys()).difference(physical.values()):
+            if Architecture.coupling_map.shortest_undirected_path(physical[mapping[i]], u) < min_dist:
+                min_dist = Architecture.coupling_map.shortest_undirected_path(physical[mapping[i]], u)
+                closest = u
+        physical[i] = closest
+        
     
     # return T
     #print(physical)
@@ -139,9 +153,9 @@ def _bfs(node: int, P: dict[int, set[int]]) -> tuple[int, list[int]]:
 
 
 def _walk_string(
-    i: int, mapping: dict[int, tuple[str, int]], nqubits: int, nstrings: int, phys: dict[int, int]
+    i: int, mapping: dict[int, tuple[str, int]], nstrings: int, phys: dict[int, int]
 ):
-    string = ["I" for _ in range(nqubits)]
+    string = ["I" for _ in range(Architecture.nqubits)]
 
     while i in mapping:             #move up the tree until we get to the root (the root has no parent and is not in mapping)
         op, i = mapping[i]
@@ -293,18 +307,9 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
             heights[i] = 0
     
     
-    P: dict[int, set[int]] = {
-        0: {1,2,3},
-        1: {0},
-        2: {0},
-        3: {0}
-    }
-    hardware = Architecture.hardware
-    print(hardware.coupling_map)
-    print(Architecture.nqubits)
-    print(Architecture.adj_list)
-    physical = mapper(P, tree, mapping, heights, nqubits)
-    return [_walk_string(i, mapping, nqubits, nstrings, physical) for i in range(nstrings - 1)]
+    P = Architecture.adj_list
+    physical = mapper(tree, mapping, heights, nqubits)
+    return [_walk_string(i, mapping, nstrings, physical) for i in range(nstrings - 1)]
 
 
 class HamiltonianTernaryConnectivityMapper(ModeBasedMapper, FermionicMapper):
