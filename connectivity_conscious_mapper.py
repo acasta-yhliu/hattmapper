@@ -37,7 +37,7 @@ def mapper(
     r, longest = _find_root(P, h)
     #assigns the longest path in the tree to the longest path in our bfs from the root.
     physical: dict[int,int] = {}
-    reversed(longest)
+    longest.reverse()
     if len(treepath) == len(longest):
         for i in range(len(treepath)):
             physical[treepath[i]] = longest[i]
