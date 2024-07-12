@@ -2,6 +2,7 @@ from qiskit_nature.units import DistanceUnit
 from qiskit_nature.second_q.drivers import PySCFDriver
 
 from utility import Simulation
+from utility import Evaluation
 from utility import load_molecule
 from ternary_tree_mapper import HamiltonianTernaryTreeMapper
 from ternary_bonsai_mapper import HamiltonianTernaryBonsaiMapper
@@ -28,13 +29,30 @@ fermionic_hamiltonian = (
 # simulation = Simulation(fermionic_hamiltonian, JordanWignerMapper())
 
 # print(simulation.simulate())
+
+# start = time.time()
+# simulation = Simulation(fermionic_hamiltonian, HamiltonianTernaryBonsaiMapper(fermionic_hamiltonian))
+# end = time.time()
+# print(str(end - start))
+
+# #print(simulation.simulate())
+
+# start = time.time()
+# simulation = Simulation(fermionic_hamiltonian, HamiltonianTernaryConnectivityMapper(fermionic_hamiltonian))
+# end = time.time()
+# print(str(end - start))
+
+#print(simulation.simulate())
+
+
 start = time.time()
-simulation = Simulation(fermionic_hamiltonian, HamiltonianTernaryBonsaiMapper(fermionic_hamiltonian))
+simulation = Evaluation(fermionic_hamiltonian, HamiltonianTernaryBonsaiMapper(fermionic_hamiltonian))
 end = time.time()
 print(str(end - start))
+
 #print(simulation.simulate())
+
 start = time.time()
-simulation = Simulation(fermionic_hamiltonian, HamiltonianTernaryConnectivityMapper(fermionic_hamiltonian))
+simulation = Evaluation(fermionic_hamiltonian, HamiltonianTernaryConnectivityMapper(fermionic_hamiltonian))
 end = time.time()
 print(str(end - start))
-#print(simulation.simulate())

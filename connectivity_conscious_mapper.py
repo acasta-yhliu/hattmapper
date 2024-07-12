@@ -43,10 +43,12 @@ def mapper(
     #root is always the root of the tree
     physical[nqubits * 3] = r
     # Body of subroutine
-    for i in range(nqubits * 3, nqubits * 2 + 1, -1):
+    for i in range(nqubits * 3, nqubits * 2 + 1, -1): #not sure if this should have the +1 or not.
         if i in physical:
             continue
         _, parent = mapping[i]
+        if parent not in physical:
+            continue
         for w in P[physical[parent]]: # iterate to find neighbors of v that are unassigned
             if w not in physical.values():  #find one thats not assigned? assign it.
                 physical[i] = w

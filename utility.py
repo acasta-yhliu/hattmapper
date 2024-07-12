@@ -236,18 +236,6 @@ class Evaluation:
         # this is also the observable
         self.qubit_hamiltonian: SparsePauliOp = mapper.map(fermionic_hamiltonian)  # type: ignore
 
-        print("  Solve ground state:")
-
-        result = GroundStateEigensolver(mapper, NumPyMinimumEigensolver()).solve(
-            BaseProblem(FermionicHamiltonian(self.fermionic_hamiltonian))
-        )
-
-        assert result.groundstate is not None
-        preparation = result.groundstate[0]
-
-        initial_state = Statevector.from_instruction(preparation)
-
-        print(f"    Ground energy = {result.groundenergy}")
 
         print("  Construct and transpile Pauli evolution:")
         print(f"    Time duration    = {time}")
@@ -258,7 +246,7 @@ class Evaluation:
         self.circuit = QuantumCircuit(pe.num_qubits)
         self.circuit.append(pe, range(pe.num_qubits))
         self.circuit = transpile(
-            self.circuit, basis_gates=basis_gates, optimization_level=3, #coupling_map=FakeBrooklynV2().coupling_map
+            self.circuit, basis_gates=basis_gates, optimization_level=3, coupling_map=Architecture.coupling_map
         )
 
         print("  Circuit summary:")
