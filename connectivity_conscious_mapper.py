@@ -51,21 +51,7 @@ def mapper(
             if w not in physical.values():  #find one thats not assigned? assign it.
                 physical[i] = w
                 break
-    
-        
-    # # enumerate/iterate through all vertices that have not been mapped to
-    # for u in set(P.keys()).difference(physical.values()):
-    #     #all this does currently is: finds a qubit that has not been mapped onto the tree yet randomly, and assign it to that in the set.
-    #     #this definitely could be optimized, such that the qubit is assigned as a child of node with qubit x such that physical distance to x is minimized
-    #     #(thus lowering swaps needed)
-    #     C: set[int] = set(range(nqubits * 2 + 1, nqubits * 3 + 1, 1)).difference(set(physical.keys()))
-        
-    #     if len(C) > 1:
-    #         C = set(random.sample(C, 1))
-    #     if len(C) == 1:
-    #         [v] = C
-    #         physical[v] = u
-            
+         
     # if a tree node has not yet recieved a mapping, map it to the physically closest qubit to its parent
     for i in range(nqubits * 2 + 1, nqubits * 3 + 1, 1):
         if i in physical:
@@ -92,22 +78,27 @@ def _find_root(P: dict[int, set[int]], h: int) -> tuple[int, list[int]]:
     min_max_dist = float("inf") # make it a large number for now
     candidate_root: int | None = None
     candidate_path: list[int] | None = None
+    min_avg_dist = float("inf")
     for node in P.keys():
-        (dist, path) = _bfs(node, P) # run BFS to determine the max distance of any node from this node
-        if dist < min_max_dist and dist >= h - 1:
-            min_max_dist = dist
-            candidate_root = node
-            candidate_path = path
+        (dist, path, avg_dist) = _bfs(node, P) # run BFS to determine the max distance of any node from this node
+        if dist <= min_max_dist and dist >= h - 1:
+            if avg_dist < min_avg_dist:
+                min_max_dist = dist
+                candidate_root = node
+                candidate_path = path
             
     #if there isn't a long enough path, just choose the most central
     #this might not work?
     if min_max_dist != h - 1:
+        min_max_dist = float("inf")
+        min_avg_dist = float("inf")
         for node in P.keys():
-            (dist, path) = _bfs(node, P) # run BFS to determine the max distance of any node from this node
-            if dist < min_max_dist:
-                min_max_dist = dist
-                candidate_root = node
-                candidate_path = path
+            (dist, path, avg_dist) = _bfs(node, P) # run BFS to determine the max distance of any node from this node
+            if dist <= min_max_dist:
+                if avg_dist < min_avg_dist:
+                    min_max_dist = dist
+                    candidate_root = node
+                    candidate_path = path
                 
     assert candidate_root is not None
     assert candidate_path is not None
@@ -121,7 +112,7 @@ def _bfs(node: int, P: dict[int, set[int]]) -> tuple[int, list[int]]:
     longest_path: list[int] = [] # will store the longest path
 
 
-    visited: set[int] = set()
+    visited: dict[int, int] = {}
     queue = [] # the list that serves as a queue that determines order of exploration in BFS
     dist_queue = [] # keeps track of the distance we're at
     paths: list[list[int]] = []
@@ -151,9 +142,9 @@ def _bfs(node: int, P: dict[int, set[int]]) -> tuple[int, list[int]]:
                 if curr_dist + 1 > furthest: # update furthest dist if curr dist is larger
                     furthest = curr_dist + 1
                     longest_path = curr_path_copy
-                visited.add(curr) # mark current node as "visited"
+                visited[curr] = curr_dist + 1 # mark current node as "visited"
 
-    return (furthest, longest_path)
+    return (furthest, longest_path, sum(visited.values())/len(visited.values()))
 
 
 def _walk_string(
