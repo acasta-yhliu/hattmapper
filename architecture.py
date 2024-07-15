@@ -2,7 +2,7 @@ import qiskit_ibm_runtime.fake_provider
 
 #This class allows us to quickly change around our files for quicker testing.
 class Architecture():
-    hardware = qiskit_ibm_runtime.fake_provider.FakePoughkeepsieV2()
+    hardware = qiskit_ibm_runtime.fake_provider.FakeSydneyV2()
     nqubits = hardware.num_qubits
     coupling_map = hardware.coupling_map
     adj_list: dict[int, set[int]] = {}

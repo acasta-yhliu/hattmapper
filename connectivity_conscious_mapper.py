@@ -60,18 +60,15 @@ def mapper(
             continue
         min_dist = float("inf")
         for u in set(P.keys()).difference(physical.values()):
-            print(mapping[i])
-            print(mapping[i][1])
-            print(physical[mapping[i][1]])
             u_dist = len(Architecture.coupling_map.shortest_undirected_path(physical[mapping[i][1]], u))
             if u_dist < min_dist:
                 min_dist = u_dist
                 closest = u
         physical[i] = closest
         
-    print(tree)
+    #print(tree)
     # return T
-    print(physical)
+    #print(physical)
     return physical
     
 

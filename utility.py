@@ -238,10 +238,6 @@ class Evaluation:
 
 
         print("  Construct and transpile Pauli evolution:")
-        print(f"    Time duration    = {time}")
-        print(f"    Basis gates      = {', '.join(basis_gates)}")
-        print(f"    Synthesis method = {synthesis.__class__.__name__}")
-
         pe = PauliEvolutionGate(self.qubit_hamiltonian, time=time, synthesis=synthesis)
         self.circuit = QuantumCircuit(pe.num_qubits)
         self.circuit.append(pe, range(pe.num_qubits))
