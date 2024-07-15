@@ -44,13 +44,20 @@ fermionic_hamiltonian = (
 
 #print(simulation.simulate())
 
+# start = time.time()
+# simulation = Evaluation(fermionic_hamiltonian, JordanWignerMapper())
+# end = time.time()
+# print(str(end - start))
 
-start = time.time()
-simulation = Evaluation(fermionic_hamiltonian, HamiltonianTernaryBonsaiMapper(fermionic_hamiltonian))
-end = time.time()
-print(str(end - start))
+# start = time.time()
+# simulation = Evaluation(fermionic_hamiltonian, BravyiKitaevMapper())
+# end = time.time()
+# print(str(end - start))
 
-#print(simulation.simulate())
+# start = time.time()
+# simulation = Evaluation(fermionic_hamiltonian, HamiltonianTernaryBonsaiMapper(fermionic_hamiltonian))
+# end = time.time()
+# print(str(end - start))
 
 start = time.time()
 simulation = Evaluation(fermionic_hamiltonian, HamiltonianTernaryConnectivityMapper(fermionic_hamiltonian))

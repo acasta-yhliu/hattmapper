@@ -33,7 +33,7 @@ def mapper(
         _, i = mapping[i]
     treepath.append(i)
     treepath.pop(0)
-    r, longest = _find_root(P, h)
+    r, longest = _find_root(P, h, sum(heights.values()) / len(heights.keys()))
     #assigns the longest path in the tree to the longest path in our bfs from the root.
     physical: dict[int,int] = {}
     longest.reverse()
@@ -43,7 +43,7 @@ def mapper(
     #root is always the root of the tree
     physical[nqubits * 3] = r
     # Body of subroutine
-    for i in range(nqubits * 3, nqubits * 2 + 1, -1): #not sure if this should have the +1 or not.
+    for i in range(nqubits * 3, nqubits * 2, -1):
         if i in physical:
             continue
         _, parent = mapping[i]
@@ -55,11 +55,14 @@ def mapper(
                 break
          
     # if a tree node has not yet recieved a mapping, map it to the physically closest qubit to its parent
-    for i in range(nqubits * 2 + 1, nqubits * 3 + 1, 1):
+    for i in range(nqubits * 3, nqubits * 2, -1):
         if i in physical:
             continue
         min_dist = float("inf")
         for u in set(P.keys()).difference(physical.values()):
+            print(mapping[i])
+            print(mapping[i][1])
+            print(physical[mapping[i][1]])
             u_dist = len(Architecture.coupling_map.shortest_undirected_path(physical[mapping[i][1]], u))
             if u_dist < min_dist:
                 min_dist = u_dist
@@ -76,7 +79,7 @@ def mapper(
 ## Finds a root node r for the subroutine above.
 ## NOTE: this approach is quite naive (mainly for general prototyping) 
 ##       and can possibly be optimized for runtime performance.
-def _find_root(P: dict[int, set[int]], h: int) -> tuple[int, list[int]]:
+def _find_root(P: dict[int, set[int]], h: int, avg_height: float) -> tuple[int, list[int]]:
     min_max_dist = float("inf") # make it a large number for now
     candidate_root: int | None = None
     candidate_path: list[int] | None = None
@@ -84,8 +87,9 @@ def _find_root(P: dict[int, set[int]], h: int) -> tuple[int, list[int]]:
     for node in P.keys():
         (dist, path, avg_dist) = _bfs(node, P) # run BFS to determine the max distance of any node from this node
         if dist <= min_max_dist and dist >= h - 1:
-            if avg_dist < min_avg_dist:
+            if abs(avg_dist - avg_height) < min_avg_dist:
                 min_max_dist = dist
+                min_avg_dist = abs(avg_dist - avg_height)
                 candidate_root = node
                 candidate_path = path
             
@@ -99,6 +103,7 @@ def _find_root(P: dict[int, set[int]], h: int) -> tuple[int, list[int]]:
             if dist <= min_max_dist:
                 if avg_dist < min_avg_dist:
                     min_max_dist = dist
+                    min_avg_dist = avg_dist
                     candidate_root = node
                     candidate_path = path
                 
@@ -109,7 +114,7 @@ def _find_root(P: dict[int, set[int]], h: int) -> tuple[int, list[int]]:
 ## Runs BFS from a specified node on the given graph P,
 ## returns longest topological dist from given node
 ## and the nodes along that path
-def _bfs(node: int, P: dict[int, set[int]]) -> tuple[int, list[int]]:
+def _bfs(node: int, P: dict[int, set[int]]) -> tuple[int, list[int], int]:
     furthest = 0 # initialize furthest distance to be 0 at first
     longest_path: list[int] = [] # will store the longest path
 
