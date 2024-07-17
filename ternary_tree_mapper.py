@@ -82,7 +82,7 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
 
     # mapping, node -> branch, parent
     mapping: dict[int, tuple[str, int]] = {}
-    
+
     for round in range(nqubits):
         # the qubit that will become the new parent
         qubit_id = nstrings + round
@@ -143,3 +143,45 @@ class HamiltonianTernaryTreeMapper(ModeBasedMapper, FermionicMapper):
         with open(path, "r") as pauli_table_file:
             lines = list(map(str.strip, pauli_table_file.readlines()))
             return HamiltonianTernaryTreeMapper(lines)
+
+
+class TernaryTreeMapper(FermionicMapper, ModeBasedMapper):
+    def map(self, second_q_ops: FermionicOp, *, register_length: int | None = None) -> SparsePauliOp:  # type: ignore
+        return super().map(second_q_ops, register_length=register_length)  # type: ignore
+
+    def pauli_table(self, register_length: int):
+        table = []
+
+        pt = self.majorana_table(register_length)
+
+        for i in range(0, len(pt), 2):
+            table.append((Pauli(pt[i]), Pauli(pt[i + 1])))
+
+        return table
+
+    def majorana_table(self, register_length: int):
+        nqubits = register_length
+
+        mapping: dict[int, tuple[str, int]] = {}
+
+        # initial slots : all the slots of the root
+        free_slots: list[tuple[int, str]] = [
+            (2 * nqubits + 1, "Z"),
+            (2 * nqubits + 1, "Y"),
+            (2 * nqubits + 1, "X"),
+        ]
+
+        # 1. insert all qubits
+        for n in range(2 * nqubits + 2, 3 * nqubits + 1):
+            parent, branch = free_slots.pop(0)
+            mapping[n] = (branch, parent)
+            free_slots.extend([(n, "X"), (n, "Y"), (n, "Z")])
+
+        for n in range(2 * nqubits + 1):
+            parent, branch = free_slots.pop(0)
+            mapping[n] = (branch, parent)
+
+        return [
+            _walk_string(i, mapping, nqubits, 2 * nqubits + 1)
+            for i in range(2 * nqubits)
+        ]
