@@ -18,6 +18,7 @@ from qiskit_algorithms import NumPyMinimumEigensolver
 from qiskit_aer import noise
 from qiskit_aer.primitives import Estimator
 from qiskit_aer.library import set_statevector
+import numpy as np
 
 import tempfile
 import subprocess
@@ -211,6 +212,7 @@ class Simulation:
 
         return result.values[0], result.metadata[0]["variance"]
 
+
 class Execution:
     def __init__(
         self,
@@ -238,8 +240,9 @@ class Execution:
         assert result.groundstate is not None
         preparation = result.groundstate[0]
 
-        initial_state = Statevector.from_instruction(preparation)
-        print(initial_state)
+        initial_state_data = Statevector.from_instruction(preparation).data
+        initial_state_data[np.abs(initial_state_data) < Statevector.atol] = 0
+        initial_state = Statevector(initial_state_data)
 
         print(f"    Ground energy = {result.groundenergy}")
 
@@ -251,9 +254,10 @@ class Execution:
         print(f"    Synthesis method = {synthesis.__class__.__name__}")
 
         pe = PauliEvolutionGate(self.qubit_hamiltonian, time=time, synthesis=synthesis)
-        self.circuit = QuantumCircuit(pe.num_qubits)
+        self.circuit = QuantumCircuit(pe.num_qubits, pe.num_qubits)
         self.circuit.prepare_state(initial_state)
         self.circuit.append(pe, range(pe.num_qubits))
+        self.circuit.measure(range(pe.num_qubits), range(pe.num_qubits))
         self.circuit = transpile(
             self.circuit, basis_gates=basis_gates, optimization_level=3
         )
@@ -261,7 +265,10 @@ class Execution:
         print("  Circuit summary:")
         print(f"    Depth = {self.circuit.depth()}")
         counted_gates = [
-            f"{counts} {op.upper()}" for op, counts in {str(k): v for k, v in self.circuit.count_ops().items()}.items()
+            f"{counts} {op.upper()}"
+            for op, counts in {
+                str(k): v for k, v in self.circuit.count_ops().items()
+            }.items()
         ]
         print(f"    Gates = {', '.join(counted_gates)}")
 
