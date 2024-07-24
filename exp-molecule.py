@@ -12,17 +12,17 @@ molecules = (
     ("LiH", "H 0 0 0; Li 0 0 1.6"),
     ("H_2O", "O 0.0 0.0 0.0; H 0.757 0.586 0.0; H -0.757 0.586 0.0"),
     ("CH_4", load_molecule("tests/methane.json")),
-    ("N_2", load_molecule("tests/n2.json")),
     ("O_2", "O 0.616 0.0 0.0; O -0.616 0.0 0.0"),
-    ("C_2H_6", load_molecule("tests/ethane.json")),
+    ("NaF", load_molecule("tests/NaF.json")),
+    ("CO_2", load_molecule("tests/co2.json")),
 )
 
 
 pw_file = open("tests/pauli-weight/molecule.csv", "w")
-print("Geometry,Modes,Tree,JW,BK,BTT", file=pw_file)
+print("Geometry,Modes,Tree,JW,BK,BTT,FH", file=pw_file)
 
 circ_file = open("tests/circuit-complexity/molecule.csv", "w")
-print("Geometry,Modes,Tree,JW,BK,BTT", file=circ_file)
+print("Geometry,Modes,Tree,JW,BK,BTT,FH", file=circ_file)
 
 for casename, atom in molecules:
     print(casename)
@@ -46,6 +46,7 @@ for casename, atom in molecules:
         JordanWignerMapper(),
         BravyiKitaevMapper(),
         TernaryTreeMapper(),
+        FermihedralMapper.molecule()
     )
 
     weights = []
