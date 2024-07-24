@@ -8,15 +8,16 @@ from ternary_tree_mapper import HamiltonianTernaryTreeMapper
 from ternary_bonsai_mapper import HamiltonianTernaryBonsaiMapper
 from connectivity_conscious_mapper import HamiltonianTernaryConnectivityMapper
 from original_bonsai_mapper import HamiltonianOriginalBonsaiMapper
+from ternary_union_mapper import HamiltonianTernaryUnionMapper
 from qiskit.synthesis import LieTrotter, QDrift
 
 import time
 
 from qiskit_nature.second_q.mappers import BravyiKitaevMapper, JordanWignerMapper
-
+# "H 0 0 0; Li 1.6 0 0;"
 fermionic_hamiltonian = (
     PySCFDriver(
-        atom=load_molecule("tests/carbonmonoxide.json"),
+        atom= load_molecule("tests/methane.json"),
         basis="sto3g",
         charge=0,
         spin=0,
@@ -26,46 +27,22 @@ fermionic_hamiltonian = (
     .hamiltonian.second_q_op()
 )
 
-
-# simulation = Simulation(fermionic_hamiltonian, JordanWignerMapper())
-
-# print(simulation.simulate())
-
-# start = time.time()
-# simulation = Simulation(fermionic_hamiltonian, HamiltonianTernaryBonsaiMapper(fermionic_hamiltonian))
-# end = time.time()
-# print(str(end - start))
-
-# #print(simulation.simulate())
-
-# start = time.time()
-# simulation = Simulation(fermionic_hamiltonian, HamiltonianTernaryConnectivityMapper(fermionic_hamiltonian))
-# end = time.time()
-# print(str(end - start))
-
-#print(simulation.simulate())
-
-start = time.time()
-simulation = Evaluation(fermionic_hamiltonian, JordanWignerMapper())
-end = time.time()
-print(str(end - start))
-
-start = time.time()
-simulation = Evaluation(fermionic_hamiltonian, BravyiKitaevMapper())
-end = time.time()
-print(str(end - start))
-
 start = time.time()
 simulation = Evaluation(fermionic_hamiltonian, HamiltonianTernaryBonsaiMapper(fermionic_hamiltonian))
 end = time.time()
 print(str(end - start))
 
 start = time.time()
-simulation = Evaluation(fermionic_hamiltonian, HamiltonianTernaryConnectivityMapper(fermionic_hamiltonian))
+simulation = Evaluation(fermionic_hamiltonian, HamiltonianTernaryUnionMapper(fermionic_hamiltonian))
 end = time.time()
 print(str(end - start))
 
-start = time.time()
-simulation = Evaluation(fermionic_hamiltonian, HamiltonianOriginalBonsaiMapper(fermionic_hamiltonian))
-end = time.time()
-print(str(end - start))
+# start = time.time()
+# simulation = Evaluation(fermionic_hamiltonian, HamiltonianTernaryConnectivityMapper(fermionic_hamiltonian))
+# end = time.time()
+# print(str(end - start))
+
+# start = time.time()
+# simulation = Evaluation(fermionic_hamiltonian, HamiltonianOriginalBonsaiMapper(fermionic_hamiltonian))
+# end = time.time()
+# print(str(end - start))
