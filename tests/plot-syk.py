@@ -25,7 +25,7 @@ def format_mapper(mapper: str):
 
 
 pw_records = []
-filename = f"pauli-weight/fermihubbard.csv"
+filename = f"pauli-weight/syk.csv"
 
 with open(filename, "r") as csvfile:
     pauli_weight_result = csv.DictReader(csvfile)
@@ -54,18 +54,10 @@ plt.xlabel("")
 plt.ylabel("Pauli Weight")
 plt.legend(prop={"family": "sans serif"})
 
-plt.annotate(
-    "Max size Fermihedral could solve",
-    xy=(3.2, 500),
-    xytext=(3.5, 1200),
-    arrowprops=dict(facecolor="black", shrink=0.05, width=1.5),
-    fontsize=22,
-)
-
 
 circ_records = []
 
-filename = f"circuit-complexity/fermihubbard.csv"
+filename = f"circuit-complexity/syk.csv"
 
 
 def extract_record(record: str):
@@ -108,7 +100,7 @@ plt.grid(True, axis="y")
 plt.xlabel("Modes (Geometry)")
 plt.ylabel("Circuit Depth")
 plt.legend(prop={"family": "sans serif"})
-plt.savefig(f"./fermihubbard.pdf")
+plt.savefig(f"./syk.pdf")
 
 
 def summary_file(
@@ -139,5 +131,5 @@ def extract_circuit(record: str, i: int):
     return [int(s[0]), int(s[2])][i]
 
 
-summary_file("circuit-complexity/fermihubbard.csv", lambda x: extract_circuit(x, 0))
-summary_file("circuit-complexity/fermihubbard.csv", lambda x: extract_circuit(x, 1))
+summary_file("circuit-complexity/syk.csv", lambda x: extract_circuit(x, 0))
+summary_file("circuit-complexity/syk.csv", lambda x: extract_circuit(x, 1))

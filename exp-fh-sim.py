@@ -1,13 +1,15 @@
 from typing import Literal
-from utility import load_molecule, pauli_weight, Simulation, FermihedralMapper
-from qiskit_nature.second_q.drivers import PySCFDriver
-from qiskit_nature.units import DistanceUnit
+from utility import Simulation, FermihedralMapper
 from ternary_bonsai_mapper import HamiltonianTernaryBonsaiMapper
 from ternary_tree_mapper import TernaryTreeMapper
 from qiskit_nature.second_q.operators import FermionicOp
 from qiskit_nature.second_q.mappers import BravyiKitaevMapper, JordanWignerMapper
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from qiskit_nature.second_q.transformers import FreezeCoreTransformer
+
+from qiskit_nature.second_q.hamiltonians.lattices import (
+    BoundaryCondition,
+    SquareLattice,
+)
+from qiskit_nature.second_q.hamiltonians import FermiHubbardModel
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -15,41 +17,25 @@ import matplotlib.pyplot as plt
 plt.style.use("classic")
 
 from tqdm import tqdm
-import sys
 
-molecule = sys.argv[1]
+t = -1.0  # the interaction parameter
+v = 0.0  # the onsite potential
+u = 5.0  # the interaction parameter U
 
-if molecule == "H2":
-    hamiltonian: FermionicOp = (
-        PySCFDriver(
-            atom="H 0 0 0; H 0 0 0.735",
-            basis="sto3g",
-            charge=0,
-            spin=0,
-            unit=DistanceUnit.ANGSTROM,
-        )
-        .run()
-        .hamiltonian.second_q_op()
-    )
-else:
-    freeze_list = [0]
-    remove_list = [-3, -2]
 
-    problem = PySCFDriver(
-        atom="H 0 0 0; Li 0 0 1.6",
-        basis="sto3g",
-        charge=0,
-        spin=0,
-        unit=DistanceUnit.ANGSTROM,
-    ).run()
-
-    hamiltonian: FermionicOp = (
-        FreezeCoreTransformer(freeze_core=True, remove_orbitals=[-3, 3, 2, -2])
-        .transform(problem)
-        .hamiltonian.second_q_op()
+square_lattice = SquareLattice(
+        rows=2, cols=3, boundary_condition=BoundaryCondition.PERIODIC
     )
 
-# print(hamiltonian.register_length)
+fhm = FermiHubbardModel(
+    square_lattice.uniform_parameters(
+        uniform_interaction=t,
+        uniform_onsite_potential=v,
+    ),
+    onsite_interaction=u,
+)
+
+hamiltonian: FermionicOp = fhm.second_q_op().simplify()
 
 ttmapper = HamiltonianTernaryBonsaiMapper(hamiltonian)
 
@@ -92,8 +78,8 @@ class Result:
         return self.var.min()
 
 
-err_1qs = np.arange(0.0001, 0.001, 0.00005)
-err_2qs = np.arange(0.001, 0.01, 0.0005)
+err_1qs = (0.00001, 0.00005, 0.0001)
+err_2qs = (0.0001, 0.0005, 0.001)
 
 tt_result = Result(len(err_1qs), len(err_2qs), ttsim.ground_energy)
 jw_result = Result(len(err_1qs), len(err_2qs), jwsim.ground_energy)
@@ -123,6 +109,7 @@ for i in tqdm(range(len(err_1qs))):
 # Do the plotting
 
 
+
 def plot(vorb: Literal["var", "bias"]):
     name = "Bias" if vorb == "bias" else "Variance"
 
@@ -145,9 +132,7 @@ def plot(vorb: Literal["var", "bias"]):
     yticks = [0, 5, 10, 15]
 
     plt.subplot(1, 5, 1)
-    plt.imshow(
-        getattr(jw_result, vorb), interpolation="nearest", vmax=maxvalue, vmin=minvalue
-    )
+    plt.imshow(getattr(jw_result, vorb), interpolation="nearest", vmax=maxvalue, vmin=minvalue)
     plt.xticks([])
     plt.yticks([])
     # plt.xticks(xticks, [f"{i*1000:.2f}" for i in err_1qs[xticks]], fontsize=16)
@@ -156,9 +141,7 @@ def plot(vorb: Literal["var", "bias"]):
     # plt.ylabel("2Q Gate Error Rate ($\\times10^{-4}$)", fontsize=16)
 
     plt.subplot(1, 5, 2)
-    plt.imshow(
-        getattr(bk_result, vorb), interpolation="nearest", vmax=maxvalue, vmin=minvalue
-    )
+    plt.imshow(getattr(bk_result, vorb), interpolation="nearest", vmax=maxvalue, vmin=minvalue)
     plt.xticks([])
     plt.yticks([])
 
@@ -186,14 +169,13 @@ def plot(vorb: Literal["var", "bias"]):
     # cax = fig.add_axes([ax[-1].get_position().x1-0.25,ax[-1].get_position().y0,0.02,ax[-1].get_position().y1-ax[-1].get_position().y0])
     # divider = make_axes_locatable(ax[-1])
     # cax = divider.append_axes("right", size="5%", pad=0.05)
-
+    
     plt.colorbar(im, fraction=0.05, pad=0.04, aspect=20)
 
     # for t in cbar.ax.get_yticklabels():
     #     t.set_fontsize(16)
 
-    plt.savefig(f"tests/simulation/{molecule}-{name.lower()}.pdf")
-
+    plt.savefig(f"tests/simulation/fh-{name.lower()}.pdf")
 
 plot("bias")
 plot("var")

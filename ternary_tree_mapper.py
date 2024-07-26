@@ -66,15 +66,17 @@ def _select_nodes(
     return selection
 
 
-def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None):
+def _compile_fermionic_op(fermionic_op: FermionicOp | MajoranaOp, nqubits: int | None = None):
     if nqubits is None:
         nqubits = fermionic_op.register_length
+    
+    majorana_op = MajoranaOp.from_fermionic_op(fermionic_op) if isinstance(fermionic_op, FermionicOp) else fermionic_op
 
     nstrings = 2 * nqubits + 1
     # turn the Hamiltonian into Majorana form and ignore the coefficients
     terms = [
         tuple(ms[1] for ms in term[0])
-        for term in MajoranaOp.from_fermionic_op(fermionic_op).terms()
+        for term in majorana_op.terms()
         if not isclose(abs(term[1]), 0)
     ]
     # generate all terms, all initial nodes (strings)
@@ -110,9 +112,9 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
 
 class HamiltonianTernaryTreeMapper(ModeBasedMapper, FermionicMapper):
     def __init__(
-        self, loader: FermionicOp | list[str], nqubits: int | None = None
+        self, loader: FermionicOp | MajoranaOp | list[str], nqubits: int | None = None
     ) -> None:
-        if isinstance(loader, FermionicOp):
+        if isinstance(loader, FermionicOp) or isinstance(loader, MajoranaOp):
             raw_pauli_table = _compile_fermionic_op(loader, nqubits)
         else:
             raw_pauli_table = loader
