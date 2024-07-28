@@ -41,7 +41,7 @@ def print_tree(i: int, tree: dict[int, tuple[int, int, int]], nstrings: int, str
 
 def _select_nodes(
     terms: list[tuple[int, ...]], nodes: set[int], round: int, nqubits: int, tree: dict[int, tuple[int, int, int]], 
-    mapping: dict[int, tuple[str, int]], descendants: dict[int, int], ancestors: dict[int,int]
+    mapping: dict[int, tuple[str, int]], descendants: list[int], ancestors: list[int]
 ):
     minimum_pauli_weight = float("inf")
     selection: tuple[int, int, int] | None = None
@@ -121,10 +121,10 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
     #mapping for parent -> (x,y,z)
     tree: dict[int, tuple[int, int, int]] = {}
     
-    descendants: dict[int, int] = {}
-    ancestors: dict[int, int] = {}
+    descendants: list[int] = [-1] * (nstrings + nqubits)
+    ancestors: list[int] = [-1] * (nstrings + nqubits)
     
-    for i in range(nstrings):
+    for i in range(nstrings + nqubits):
         descendants[i] = i
         ancestors[i] = i
     
