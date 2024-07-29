@@ -124,7 +124,7 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
     descendants: list[int] = [-1] * (nstrings + nqubits)
     ancestors: list[int] = [-1] * (nstrings + nqubits)
     
-    for i in range(nstrings + nqubits):
+    for i in range(nstrings):
         descendants[i] = i
         ancestors[i] = i
     
