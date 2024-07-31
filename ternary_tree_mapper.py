@@ -21,6 +21,26 @@ def _walk_string(
     return "".join(string)
 
 
+def _walk_ternary_string(
+    i: int, mapping: dict[int, tuple[str, int]], nqubits: int, nstrings: int
+):
+    string = ["I" for _ in range(nqubits)]
+
+    index = None
+
+    while i in mapping:
+        op, i = mapping[i]
+        qubit_id = i - nstrings
+        string[qubit_id] = op
+
+        if op != "Z" and (index is None):
+            index = 2 * qubit_id if op == "X" else 2 * qubit_id + 1
+
+    # assert index is not None
+
+    return "".join(string), index
+
+
 def _select_nodes(
     terms: list[tuple[int, ...]], nodes: set[int], round: int, nqubits: int
 ):
@@ -66,11 +86,17 @@ def _select_nodes(
     return selection
 
 
-def _compile_fermionic_op(fermionic_op: FermionicOp | MajoranaOp, nqubits: int | None = None):
+def _compile_fermionic_op(
+    fermionic_op: FermionicOp | MajoranaOp, nqubits: int | None = None
+):
     if nqubits is None:
         nqubits = fermionic_op.register_length
-    
-    majorana_op = MajoranaOp.from_fermionic_op(fermionic_op) if isinstance(fermionic_op, FermionicOp) else fermionic_op
+
+    majorana_op = (
+        MajoranaOp.from_fermionic_op(fermionic_op)
+        if isinstance(fermionic_op, FermionicOp)
+        else fermionic_op
+    )
 
     nstrings = 2 * nqubits + 1
     # turn the Hamiltonian into Majorana form and ignore the coefficients
@@ -148,6 +174,10 @@ class HamiltonianTernaryTreeMapper(ModeBasedMapper, FermionicMapper):
 
 
 class TernaryTreeMapper(FermionicMapper, ModeBasedMapper):
+    def __init__(self, *, pair: bool = False) -> None:
+        super().__init__()
+        self.pair = pair
+
     def map(self, second_q_ops: FermionicOp, *, register_length: int | None = None) -> SparsePauliOp:  # type: ignore
         return super().map(second_q_ops, register_length=register_length)  # type: ignore
 
@@ -183,7 +213,16 @@ class TernaryTreeMapper(FermionicMapper, ModeBasedMapper):
             parent, branch = free_slots.pop(0)
             mapping[n] = (branch, parent)
 
-        return [
-            _walk_string(i, mapping, nqubits, 2 * nqubits + 1)
-            for i in range(2 * nqubits)
-        ]
+        if not self.pair:
+            return [
+                _walk_string(i, mapping, nqubits, 2 * nqubits + 1)
+                for i in range(2 * nqubits)
+            ]
+        else:
+            return {
+                index: string
+                for string, index in [
+                    _walk_ternary_string(i, mapping, nqubits, 2 * nqubits + 1)
+                    for i in range(2 * nqubits + 1)
+                ] if index is not None
+            }
