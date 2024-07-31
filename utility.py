@@ -389,20 +389,7 @@ FERMIHEDRAL_MOLECULE = {
         "___YY___",
         "___XY___",
     ],
-    6: [
-        "Z__Y__",
-        "Y____Y",
-        "Y____Z",
-        "Z__X__",
-        "Z__Z__",
-        "XZX___",
-        "XYX___",
-        "Y____X",
-        "X_Y_Y_",
-        "XXX___",
-        "X_Z___",
-        "X_Y_Z_",
-    ],
+    6: ['ZZZZ_X', 'ZZ_Z_Y', 'Z__X__', 'Z__Y__', 'ZZXZ_X', 'ZZYZ_X', 'Y___X_', 'Y___Y_', 'YX__ZZ', 'YY__ZZ', 'X_____', 'YZ__Z_'],
     4: ["XZ_X", "YZ_X", "ZZZX", "_ZZY", "ZZX_", "Z_Y_", "ZXXZ", "ZYXZ"],
     2: ["YX", "XX", "_Z", "_Y"],
     12: [
@@ -677,3 +664,19 @@ class FermihedralMapper(FermionicMapper, ModeBasedMapper):
     @staticmethod
     def fermi_hubbard():
         return FermihedralMapper(FERMIHEDRAL_FERMIHUBBARD)
+
+def load_hamiltonian(filename : str):
+    data = {}
+    def transform_operator(op: str):
+        opindex = int(op)
+        if opindex < 0:
+            return f"-_{abs(opindex) - 1}"
+        else:
+            return f"+_{abs(opindex) - 1}"
+
+    with open(filename) as hfile:
+        for line in map(str.strip, hfile.readlines()):
+            data[" ".join(map(transform_operator, line.split(" ")))] = 1.0
+    
+    return FermionicOp(data)
+            
