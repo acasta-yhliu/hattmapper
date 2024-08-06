@@ -3,12 +3,14 @@ from qiskit_nature.second_q.drivers import PySCFDriver
 from qiskit_nature.units import DistanceUnit
 from ternary_bonsai_mapper import HamiltonianTernaryBonsaiMapper
 from ternary_tree_mapper import TernaryTreeMapper
+from qiskit_nature.second_q.transformers import FreezeCoreTransformer
 from qiskit_nature.second_q.operators import FermionicOp
 from qiskit_nature.second_q.mappers import BravyiKitaevMapper, JordanWignerMapper
 
 
 molecules = (
     ("H_2", "H 0 0 0; H 0 0 0.735"),
+    ("LiH (freeze)", "H 0 0 0; Li 0 0 1.6"),
     ("LiH", "H 0 0 0; Li 0 0 1.6"),
     ("H_2O", "O 0.0 0.0 0.0; H 0.757 0.586 0.0; H -0.757 0.586 0.0"),
     ("CH_4", load_molecule("tests/methane.json")),
@@ -27,17 +29,20 @@ print("Geometry,Modes,Tree,JW,BK,BTT,FH", file=circ_file)
 for casename, atom in molecules:
     print(casename)
 
-    hamiltonian: FermionicOp = (
-        PySCFDriver(
-            atom=atom,
-            basis="sto3g",
-            charge=0,
-            spin=0,
-            unit=DistanceUnit.ANGSTROM,
-        )
-        .run()
-        .hamiltonian.second_q_op()
-    )
+    problem = PySCFDriver(
+        atom=atom,
+        basis="sto3g",
+        charge=0,
+        spin=0,
+        unit=DistanceUnit.ANGSTROM,
+    ).run()
+
+    if casename == "LiH (freeze)":
+        problem = FreezeCoreTransformer(
+            freeze_core=True, remove_orbitals=[-3, 3, 2, -2]
+        ).transform(problem)
+
+    hamiltonian: FermionicOp = problem.hamiltonian.second_q_op()
 
     ttmapper = HamiltonianTernaryBonsaiMapper(hamiltonian)
 
@@ -46,7 +51,7 @@ for casename, atom in molecules:
         JordanWignerMapper(),
         BravyiKitaevMapper(),
         TernaryTreeMapper(),
-        FermihedralMapper.molecule()
+        FermihedralMapper.molecule(),
     )
 
     weights = []

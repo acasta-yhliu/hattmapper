@@ -1,8 +1,0 @@
-\textbf{\textsf{Molecule}},\textbf{\textsf{Modes}},\textbf{\textsf{JW}},\textbf{\textsf{BK}},\textbf{\textsf{BTT}},\textbf{\textsf{FH}},\textbf{\textsf{OptTree}}
-$H_2$,4,21,25,32,22,21
-$LiH$,12,2377,2373,2298,2985,1642
-$H_2O$,14,4620,5064,4413,--,3083
-$CH_4$,18,22798,19051,18645,--,16304
-$O_2$,20,11653,12126,10382,--,8912
-$NaF$,28,102689,93376,89260,--,69243
-$CO_2$,30,85711,70769,62857,--,58208
