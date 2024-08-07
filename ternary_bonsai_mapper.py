@@ -14,39 +14,27 @@ def _walk_string(
 ):
     string = ["I" for _ in range(nqubits)]
 
-    while i in mapping:             #move up the tree until we get to the root (the root has no parent and is not in mapping)
+    while (
+        i in mapping
+    ):  # move up the tree until we get to the root (the root has no parent and is not in mapping)
         op, i = mapping[i]
         string[i - nstrings] = op
 
     return "".join(string)
 
 
-def print_tree(i: int, tree: dict[int, tuple[int, int, int]], nstrings: int, string: str):
-    if i in tree:       #print recursively. This helps retain some structure that we can observe.
-        string[i - nstrings] = "X"
-        print_tree(tree[i][0], tree, nstrings, string)
-        string[i - nstrings] = "Y"
-        print_tree(tree[i][1], tree, nstrings, string)
-        string[i - nstrings] = "Z"
-        print_tree(tree[i][2], tree, nstrings, string)    
-        string[i - nstrings] = "I"
-    else:
-        for j in range(len(string)):
-            if string[j] == "I":
-                string[j] = " "
-        string.reverse()
-        print(f"{str(i) : <3}" + " " + "".join(string))
-        string.reverse()
-    
-    
-
 def _select_nodes(
-    terms: list[tuple[int, ...]], nodes: set[int], round: int, nqubits: int, tree: dict[int, tuple[int, int, int]], mapping: dict[int, tuple[str, int]]
+    terms: list[tuple[int, ...]],
+    nodes: set[int],
+    round: int,
+    nqubits: int,
+    tree: dict[int, tuple[int, int, int]],
+    mapping: dict[int, tuple[str, int]],
 ):
     minimum_pauli_weight = float("inf")
     selection: tuple[int, int, int] | None = None
 
-    for xx, zz in tqdm(     # bash every permutation of xx, zz and greedily choose best
+    for xx, zz in tqdm(  # bash every permutation of xx, zz and greedily choose best
         permutations(nodes, 2),
         total=math.perm(len(nodes), 2),
         leave=False,
@@ -58,21 +46,33 @@ def _select_nodes(
         vac = nqubits * 2
         while vac in mapping:
             _, vac = mapping[vac]
-        if xx == vac:               # the VAC operator should have a mapping to only Z operators. This enforces that.
+        if (
+            xx == vac
+        ):  # the VAC operator should have a mapping to only Z operators. This enforces that.
             continue
-        
+
         i = xx
-        while i in tree:            #find the Z child of the X branch
+        while i in tree:  # find the Z child of the X branch
             i = tree[i][2]
-        if i % 2 == 0:              #now the Y branch will be the corresponding other majorana operator
+        if (
+            i % 2 == 0
+        ):  # now the Y branch will be the corresponding other majorana operator
+            swap = False
             yy = i + 1
         else:
+            swap = True
             yy = i - 1
-        while yy in mapping:        # we know whatthe other majorana operator is. We now find what node it is under.
+
+        while (
+            yy in mapping
+        ):  # we know whatthe other majorana operator is. We now find what node it is under.
             _, yy = mapping[yy]
-        if zz == yy:                #check to make sure it isn't the same
+        if zz == yy:  # check to make sure it isn't the same
             continue
-            
+
+        if swap:
+            xx, yy = yy, xx
+
         pauli_weight = 0
         for term in terms:
             # for each mode in the term, map it to the corresponding gate based on the selection (or identity).
@@ -106,15 +106,23 @@ def _select_nodes(
     return selection
 
 
-def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None):
+def _compile_fermionic_op(
+    fermionic_op: FermionicOp | MajoranaOp, nqubits: int | None = None
+):
     if nqubits is None:
         nqubits = fermionic_op.register_length
+
+    majorana_op = (
+        MajoranaOp.from_fermionic_op(fermionic_op)
+        if isinstance(fermionic_op, FermionicOp)
+        else fermionic_op
+    )
 
     nstrings = 2 * nqubits + 1
     # turn the Hamiltonian into Majorana form and ignore the coefficients
     terms = [
         tuple(ms[1] for ms in term[0])
-        for term in MajoranaOp.from_fermionic_op(fermionic_op).terms()
+        for term in majorana_op.terms()
         if not math.isclose(abs(term[1]), 0)
     ]
     # generate all terms, all initial nodes (strings)
@@ -122,9 +130,9 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
 
     # mapping, node -> branch, parent
     mapping: dict[int, tuple[str, int]] = {}
-    #mapping for parent -> (x,y,z)
+    # mapping for parent -> (x,y,z)
     tree: dict[int, tuple[int, int, int]] = {}
-    
+
     for round in range(nqubits):
         # the qubit that will become the new parent
         qubit_id = nstrings + round
@@ -144,22 +152,23 @@ def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None)
         for i in range(len(terms)):
             term = tuple(idx for idx in terms[i] if idx not in selection)
             terms[i] = (
-                term if (len(terms[i]) - len(term)) % 2 == 0 else (term + (qubit_id,))  
-                #if two modes were in the selection, they are siblings under a common node, and thus will cancel each other out. Otherwise, add in the new node.
+                term
+                if (len(terms[i]) - len(term)) % 2 == 0
+                else (term + (qubit_id,))
+                # if two modes were in the selection, they are siblings under a common node, and thus will cancel each other out. Otherwise, add in the new node.
             )
         terms = list(filter(lambda x: len(x) != 0, terms))
 
     # generate solution
     # next statement helps see tree structure
-    print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
     return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
 
 
 class HamiltonianTernaryBonsaiMapper(ModeBasedMapper, FermionicMapper):
     def __init__(
-        self, loader: FermionicOp | list[str], nqubits: int | None = None
+        self, loader: FermionicOp | MajoranaOp | list[str], nqubits: int | None = None
     ) -> None:
-        if isinstance(loader, FermionicOp):
+        if isinstance(loader, FermionicOp) or isinstance(loader, MajoranaOp):
             raw_pauli_table = _compile_fermionic_op(loader, nqubits)
         else:
             raw_pauli_table = loader
