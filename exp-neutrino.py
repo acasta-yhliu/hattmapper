@@ -1,6 +1,6 @@
 from utility import pauli_weight, PaulihedralDriver, FermihedralMapper, load_hamiltonian
-from ternary_bonsai_mapper import HamiltonianTernaryBonsaiMapper
-from ternary_tree_mapper import TernaryTreeMapper
+from hatt_pairing_mapper import HATTPairingMapper
+from hatt_naive_mapper import TernaryTreeMapper
 from qiskit_nature.second_q.operators import FermionicOp
 from qiskit_nature.second_q.mappers import BravyiKitaevMapper, JordanWignerMapper
 
@@ -20,7 +20,7 @@ for nx in (3, 4, 5, 6, 7):
 
         hamiltonian: FermionicOp = load_hamiltonian(filename)
 
-        ttmapper = HamiltonianTernaryBonsaiMapper(hamiltonian)
+        ttmapper = HATTPairingMapper(hamiltonian)
 
         mappers = (
             ttmapper,

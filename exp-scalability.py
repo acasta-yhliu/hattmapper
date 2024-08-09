@@ -1,5 +1,5 @@
-from ternary_bonsai_mapper import HamiltonianTernaryBonsaiMapper
-from ternary_tree_mapper import HamiltonianTernaryTreeMapper
+from hatt_pairing_mapper import HATTPairingMapper
+from hatt_naive_mapper import HATTNaiveMapper
 from qiskit_nature.second_q.operators import FermionicOp
 from scipy.stats import linregress
 
@@ -54,10 +54,10 @@ for modes in range(2, 16):
         hamiltonian += to_acop(i, modes)
 
     with Stopwatch("naive"):
-        HamiltonianTernaryTreeMapper(hamiltonian)
+        HATTNaiveMapper(hamiltonian)
 
     with Stopwatch("optimized"):
-        HamiltonianTernaryBonsaiMapper(hamiltonian)
+        HATTPairingMapper(hamiltonian)
 
 import matplotlib.pyplot as plt
 

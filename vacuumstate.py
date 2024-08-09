@@ -4,8 +4,8 @@ from qiskit_nature.second_q.operators import FermionicOp
 from qiskit_nature.second_q.mappers.mode_based_mapper import ModeBasedMapper
 from qiskit.quantum_info import SparsePauliOp, Statevector
 
-from ternary_union_mapper import HamiltonianTernaryUnionMapper
-from ternary_bonsai_mapper import HamiltonianTernaryBonsaiMapper
+from hatt_mapper import HATTMapper
+from hatt_pairing_mapper import HATTPairingMapper
 
 molecules = (
     ("H_2", "H 0 0 0; H 0 0 0.735"),
@@ -42,8 +42,8 @@ for _, geometry in molecules:
     )
 
     assert assert_vacuum_state(
-        hamiltonian, HamiltonianTernaryUnionMapper(hamiltonian)
+        hamiltonian, HATTMapper(hamiltonian)
     ), f"union mapper failed on {geometry}"
     assert assert_vacuum_state(
-        hamiltonian, HamiltonianTernaryBonsaiMapper(hamiltonian)
+        hamiltonian, HATTPairingMapper(hamiltonian)
     ), f"bonsai mapper failed on {geometry}"

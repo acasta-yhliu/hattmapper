@@ -2,8 +2,8 @@ from typing import Literal
 from utility import load_molecule, pauli_weight, Simulation, FermihedralMapper
 from qiskit_nature.second_q.drivers import PySCFDriver
 from qiskit_nature.units import DistanceUnit
-from ternary_bonsai_mapper import HamiltonianTernaryBonsaiMapper
-from ternary_tree_mapper import TernaryTreeMapper
+from hatt_pairing_mapper import HATTPairingMapper
+from hatt_naive_mapper import TernaryTreeMapper
 from qiskit_nature.second_q.operators import FermionicOp
 from qiskit_nature.second_q.mappers import BravyiKitaevMapper, JordanWignerMapper
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -51,7 +51,7 @@ else:
 
 # print(hamiltonian.register_length)
 
-ttmapper = HamiltonianTernaryBonsaiMapper(hamiltonian)
+ttmapper = HATTPairingMapper(hamiltonian)
 
 ttsim = Simulation(hamiltonian, ttmapper)
 jwsim = Simulation(hamiltonian, JordanWignerMapper())

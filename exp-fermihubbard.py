@@ -1,6 +1,6 @@
 from utility import pauli_weight, PaulihedralDriver, FermihedralMapper
-from ternary_bonsai_mapper import HamiltonianTernaryBonsaiMapper
-from ternary_tree_mapper import TernaryTreeMapper
+from hatt_pairing_mapper import HATTPairingMapper
+from hatt_naive_mapper import TernaryTreeMapper
 from qiskit_nature.second_q.operators import FermionicOp
 from qiskit_nature.second_q.mappers import BravyiKitaevMapper, JordanWignerMapper
 
@@ -54,7 +54,7 @@ for nrows, ncols in geometry:
 
     hamiltonian: FermionicOp = fhm.second_q_op().simplify()
 
-    ttmapper = HamiltonianTernaryBonsaiMapper(hamiltonian)
+    ttmapper = HATTPairingMapper(hamiltonian)
 
     mappers = (
         ttmapper,

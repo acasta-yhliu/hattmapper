@@ -164,7 +164,7 @@ def _compile_fermionic_op(
     return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
 
 
-class HamiltonianTernaryBonsaiMapper(ModeBasedMapper, FermionicMapper):
+class HATTPairingMapper(ModeBasedMapper, FermionicMapper):
     def __init__(
         self, loader: FermionicOp | MajoranaOp | list[str], nqubits: int | None = None
     ) -> None:
@@ -198,4 +198,4 @@ class HamiltonianTernaryBonsaiMapper(ModeBasedMapper, FermionicMapper):
     def load(path: str):
         with open(path, "r") as pauli_table_file:
             lines = list(map(str.strip, pauli_table_file.readlines()))
-            return HamiltonianTernaryBonsaiMapper(lines)
+            return HATTPairingMapper(lines)

@@ -1,8 +1,8 @@
 from utility import load_molecule, pauli_weight, PaulihedralDriver, FermihedralMapper
 from qiskit_nature.second_q.drivers import PySCFDriver
 from qiskit_nature.units import DistanceUnit
-from ternary_bonsai_mapper import HamiltonianTernaryBonsaiMapper
-from ternary_tree_mapper import TernaryTreeMapper
+from hatt_pairing_mapper import HATTPairingMapper
+from hatt_naive_mapper import TernaryTreeMapper
 from qiskit_nature.second_q.transformers import FreezeCoreTransformer
 from qiskit_nature.second_q.operators import FermionicOp
 from qiskit_nature.second_q.mappers import BravyiKitaevMapper, JordanWignerMapper
@@ -44,7 +44,7 @@ for casename, atom in molecules:
 
     hamiltonian: FermionicOp = problem.hamiltonian.second_q_op()
 
-    ttmapper = HamiltonianTernaryBonsaiMapper(hamiltonian)
+    ttmapper = HATTPairingMapper(hamiltonian)
 
     mappers = (
         ttmapper,

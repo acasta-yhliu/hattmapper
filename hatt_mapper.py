@@ -3,9 +3,9 @@ from qiskit_nature.second_q.operators import FermionicOp, MajoranaOp
 from qiskit_nature.second_q.mappers.fermionic_mapper import FermionicMapper
 from qiskit_nature.second_q.mappers.mode_based_mapper import ModeBasedMapper
 
-from itertools import combinations
+from itertools import combinations, permutations
 from functools import reduce
-from math import comb, isclose
+import math
 from tqdm import tqdm
 
 
@@ -14,50 +14,64 @@ def _walk_string(
 ):
     string = ["I" for _ in range(nqubits)]
 
-    while i in mapping:
+    while (
+        i in mapping
+    ):  # move up the tree until we get to the root (the root has no parent and is not in mapping)
         op, i = mapping[i]
         string[i - nstrings] = op
 
     return "".join(string)
 
 
-def _walk_ternary_string(
-    i: int, mapping: dict[int, tuple[str, int]], nqubits: int, nstrings: int
-):
-    string = ["I" for _ in range(nqubits)]
-
-    index = None
-
-    while i in mapping:
-        op, i = mapping[i]
-        qubit_id = i - nstrings
-        string[qubit_id] = op
-
-        if op != "Z" and (index is None):
-            index = 2 * qubit_id if op == "X" else 2 * qubit_id + 1
-
-    # assert index is not None
-
-    return "".join(string), index
-
-
 def _select_nodes(
-    terms: list[tuple[int, ...]], nodes: set[int], round: int, nqubits: int
+    terms: list[tuple[int, ...]],
+    nodes: set[int],
+    round: int,
+    nqubits: int,
+    tree: dict[int, tuple[int, int, int]],
+    mapping: dict[int, tuple[str, int]],
+    descendants: list[int],
+    ancestors: list[int],
 ):
     minimum_pauli_weight = float("inf")
     selection: tuple[int, int, int] | None = None
 
-    for xx, yy, zz in tqdm(
-        combinations(nodes, 3),
-        total=comb(len(nodes), 3),
+    for xx, zz in tqdm(  # bash every permutation of xx, zz and greedily choose best
+        permutations(nodes, 2),
+        total=math.perm(len(nodes), 2),
         leave=False,
         desc=f"Qubit {round + 1}/{nqubits}",
         colour="#03925e",
         ascii="░▒█",
     ):
         # calculate Pauli weight of each selection
+        vac = nqubits * 2
+        desc = descendants[xx]
+        if (
+            desc == vac
+        ):  # the VAC operator should have a mapping to only Z operators. This enforces that.
+            continue
+
+        if (
+            desc % 2 == 0
+        ):  # now the Y branch will be the corresponding other majorana operator
+            swap = False
+            pair = desc + 1
+        else:
+            swap = True  # opposite pairing, swap x and y
+            pair = desc - 1
+
+        yy = ancestors[pair]
+        if zz == yy:  # check to make sure it isn't the same
+            continue
+
+        if swap:
+            xx, yy = yy, xx
+
         pauli_weight = 0
         for term in terms:
+            # for each mode in the term, map it to the corresponding gate based on the selection (or identity).
+            # XOR on simplectic vectors is equivalent to gates minus phase change.
             term = reduce(
                 lambda x, y: (x[0] ^ y[0], x[1] ^ y[1]),
                 map(
@@ -74,73 +88,86 @@ def _select_nodes(
                 ),
                 (False, False),
             )
+            # considered as a simplectic vector; if either is true, then we have a gate acting on this qubit.
             if term[0] or term[1]:
                 pauli_weight += 1
 
         # is the selection better ?
+        # if yes, update selection.
         if pauli_weight < minimum_pauli_weight:
             minimum_pauli_weight = pauli_weight
             selection = xx, yy, zz
-
     assert selection is not None
     return selection
 
 
-def _compile_fermionic_op(
-    fermionic_op: FermionicOp | MajoranaOp, nqubits: int | None = None
-):
+def _compile_fermionic_op(fermionic_op: FermionicOp, nqubits: int | None = None):
     if nqubits is None:
         nqubits = fermionic_op.register_length
-
-    majorana_op = (
-        MajoranaOp.from_fermionic_op(fermionic_op)
-        if isinstance(fermionic_op, FermionicOp)
-        else fermionic_op
-    )
 
     nstrings = 2 * nqubits + 1
     # turn the Hamiltonian into Majorana form and ignore the coefficients
     terms = [
         tuple(ms[1] for ms in term[0])
-        for term in majorana_op.terms()
-        if not isclose(abs(term[1]), 0)
+        for term in MajoranaOp.from_fermionic_op(fermionic_op).terms()
+        if not math.isclose(abs(term[1]), 0)
     ]
     # generate all terms, all initial nodes (strings)
     nodes = set(range(nstrings))
 
     # mapping, node -> branch, parent
     mapping: dict[int, tuple[str, int]] = {}
+    # mapping for parent -> (x,y,z)
+    tree: dict[int, tuple[int, int, int]] = {}
+
+    descendants: list[int] = [-1] * (nstrings + nqubits)
+    ancestors: list[int] = [-1] * (nstrings + nqubits)
+
+    for i in range(nstrings):
+        descendants[i] = i
+        ancestors[i] = i
 
     for round in range(nqubits):
         # the qubit that will become the new parent
         qubit_id = nstrings + round
 
         # select the node with lowest Pauli weight
-        selection = _select_nodes(terms, nodes, round, nqubits)
+        selection = _select_nodes(
+            terms, nodes, round, nqubits, tree, mapping, descendants, ancestors
+        )
 
         # update nodes and terms, record solution
         for node, op in zip(selection, "XYZ"):
             nodes.remove(node)
             mapping[node] = (op, qubit_id)
+            tree[qubit_id] = selection
         nodes.add(qubit_id)
+        descendants[qubit_id] = descendants[selection[2]]
+        ancestors[descendants[selection[2]]] = qubit_id
 
         # reduce the Hamiltonian
+        # this allows us to consider individual qubits when computing intermediary pauli weights.
         for i in range(len(terms)):
             term = tuple(idx for idx in terms[i] if idx not in selection)
             terms[i] = (
-                term if (len(terms[i]) - len(term)) % 2 == 0 else (term + (qubit_id,))
+                term
+                if (len(terms[i]) - len(term)) % 2 == 0
+                else (term + (qubit_id,))
+                # if two modes were in the selection, they are siblings under a common node, and thus will cancel each other out. Otherwise, add in the new node.
             )
         terms = list(filter(lambda x: len(x) != 0, terms))
 
     # generate solution
+    # next statement helps see tree structure
+    # print_tree(nstrings + nqubits - 1, tree, nstrings, ["I" for _ in range(nqubits)])
     return [_walk_string(i, mapping, nqubits, nstrings) for i in range(nstrings - 1)]
 
 
-class HamiltonianTernaryTreeMapper(ModeBasedMapper, FermionicMapper):
+class HATTMapper(ModeBasedMapper, FermionicMapper):
     def __init__(
-        self, loader: FermionicOp | MajoranaOp | list[str], nqubits: int | None = None
+        self, loader: FermionicOp | list[str], nqubits: int | None = None
     ) -> None:
-        if isinstance(loader, FermionicOp) or isinstance(loader, MajoranaOp):
+        if isinstance(loader, FermionicOp):
             raw_pauli_table = _compile_fermionic_op(loader, nqubits)
         else:
             raw_pauli_table = loader
@@ -170,59 +197,4 @@ class HamiltonianTernaryTreeMapper(ModeBasedMapper, FermionicMapper):
     def load(path: str):
         with open(path, "r") as pauli_table_file:
             lines = list(map(str.strip, pauli_table_file.readlines()))
-            return HamiltonianTernaryTreeMapper(lines)
-
-
-class TernaryTreeMapper(FermionicMapper, ModeBasedMapper):
-    def __init__(self, *, pair: bool = False) -> None:
-        super().__init__()
-        self.pair = pair
-
-    def map(self, second_q_ops: FermionicOp, *, register_length: int | None = None) -> SparsePauliOp:  # type: ignore
-        return super().map(second_q_ops, register_length=register_length)  # type: ignore
-
-    def pauli_table(self, register_length: int):
-        table = []
-
-        pt = self.majorana_table(register_length)
-
-        for i in range(0, len(pt), 2):
-            table.append((Pauli(pt[i]), Pauli(pt[i + 1])))
-
-        return table
-
-    def majorana_table(self, register_length: int):
-        nqubits = register_length
-
-        mapping: dict[int, tuple[str, int]] = {}
-
-        # initial slots : all the slots of the root
-        free_slots: list[tuple[int, str]] = [
-            (2 * nqubits + 1, "Z"),
-            (2 * nqubits + 1, "Y"),
-            (2 * nqubits + 1, "X"),
-        ]
-
-        # 1. insert all qubits
-        for n in range(2 * nqubits + 2, 3 * nqubits + 1):
-            parent, branch = free_slots.pop(0)
-            mapping[n] = (branch, parent)
-            free_slots.extend([(n, "X"), (n, "Y"), (n, "Z")])
-
-        for n in range(2 * nqubits + 1):
-            parent, branch = free_slots.pop(0)
-            mapping[n] = (branch, parent)
-
-        if not self.pair:
-            return [
-                _walk_string(i, mapping, nqubits, 2 * nqubits + 1)
-                for i in range(2 * nqubits)
-            ]
-        else:
-            return {
-                index: string
-                for string, index in [
-                    _walk_ternary_string(i, mapping, nqubits, 2 * nqubits + 1)
-                    for i in range(2 * nqubits + 1)
-                ] if index is not None
-            }
+            return HATTMapper(lines)
