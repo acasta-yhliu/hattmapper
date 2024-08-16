@@ -6,8 +6,15 @@ Before install dependencies, you need:
 
 * Linux 
 * Python 3.9+
-* virtual environment
+* virtual environment (`venv`)
 * We are using a pre-release version of `qiskit_nature`
+
+Create the virtual environment:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
 
 Then install necessary Python packages:
 
@@ -17,13 +24,15 @@ pip3 install -r requirements.txt
 
 ## Usage
 
-We contain tree mappers:
+We contain these mappers:
 
-1. `HamiltonianTernaryTreeMapper`: The most basic tree construction algorithm, without _vacuum state preservation_ or any optimization.
+1. `HATTMapper`: The Fermion-to-qubit mapper with _vacuum state preservation_ and _optimization_.
 
-2. `HamiltonianTernaryBonsaiMapper`: Tree construction algorithm with _vacuum state preservation_ but use traverse for operator pairing.
+2. `HATTPairingMapper`: The mapper with only _vacuum state preservation_ based on operator pairing but no travserse optimization.
 
-3. `HamiltonianTernaryUnionMapper`: The most optimized version, use caching for fast traversing and retain _vacuum state preservation_. **This is the version you should use**. Others are for legacy purpose.
+3. `HATTNaiveMapper`: The most basic one. No _vacuum state preservation_.
+
+You could compare these mappers according to our paper. However, the **`HATTMapper`** is the one you should use.
 
 ## Citation
 
