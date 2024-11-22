@@ -1,4 +1,4 @@
-from utility import pauli_weight, PaulihedralDriver, FermihedralMapper
+from hattmapper.utility import pauli_weight, PaulihedralDriver, FermihedralMapper
 from hatt_pairing_mapper import HATTPairingMapper
 from hatt_naive_mapper import TernaryTreeMapper
 from qiskit_nature.second_q.operators import FermionicOp
