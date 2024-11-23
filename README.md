@@ -32,6 +32,7 @@ To run the experiments, simply follow the checklist and run the corresponding no
 * Table II, Table III, Table VI: `ae-lattice.ipynb`
 * Figure 11: `ae-forte.ipynb`
   **Note**: Running on IonQ Forte-1 requires _reservation_ through _Amazon Braket_ and credits.
+* Figure 12: `ae-scalability.ipynb`
 
 ## Usage
 
